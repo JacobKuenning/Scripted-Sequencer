@@ -1,0 +1,19 @@
+# PITCH
+    - a midi sequencer you control with a musical scripting language
+
+# DELIVERABLES
+    - the script needs to be easier to write then heavily abstracted c++, 
+      otherwise there's no point in writing a scripting language
+    - it needs to easily interface with midi services, with as little 
+      setup as possible
+    - needs to run fast enough to support high BPM
+    - needs to give error messages when something fails
+
+# IDEAS
+    - support for randomization
+    - macro support
+        - ex: instead of "Channel 1" or "1", you could say that "P" = "Channel 1"
+        or "K" = "C1"
+    - progressive CC, say that CC will move from value x to value y over this set amount
+      of time or steps
+        - can be smooth or stepwise
