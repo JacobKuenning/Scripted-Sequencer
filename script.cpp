@@ -14,22 +14,11 @@ script::script(std::string fileName){
 
     cleanScript();
     findAndReplace("test", "globino");
-    printLines();
-
+    
     return;
 }
 
 void script::cleanScript(){
-
-    // removing all empty lines
-    std::vector<std::string> copy;
-    for (std::string l : lines){
-        if (l.size() != 0){
-            copy.push_back(l);
-        }
-    }
-    lines = copy;
-
     // removing all comments
     for (int i = 0; i < lines.size(); i++){
         std::string l = lines[i];
@@ -53,6 +42,16 @@ void script::cleanScript(){
         }
         lines[j] = l;
     }
+
+    // removing all empty lines
+    std::vector<std::string> copy;
+    for (std::string l : lines){
+        if (l.size() != 0){
+            copy.push_back(l);
+        }
+    }
+    lines = copy;
+    sLength = lines.size();
     return;
 }
 
@@ -73,4 +72,8 @@ void script::printLines(){
         std::cout << l << std::endl;
     }
     return;
+}
+
+std::string script::getLine(int n){
+    return lines[n];
 }

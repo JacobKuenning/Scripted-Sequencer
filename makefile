@@ -1,7 +1,17 @@
-all: midi_test
+all: prog
 
-a.out: main.cpp
-	g++ main.cpp -o midi_test -lrtmidi -lpthread
+prog: main.o script.o sequencer.o
+	g++ -o prog main.o script.o sequencer.o -lrtmidi
+	rm *.o
 
-run: midi_test
-	./midi_test
+main.o: main.cpp
+	g++ -c main.cpp
+
+script.o: script.cpp
+	g++ -c script.cpp
+
+sequencer.o : sequencer.cpp
+	g++ -c sequencer.cpp
+
+run:
+	./prog text.txt
