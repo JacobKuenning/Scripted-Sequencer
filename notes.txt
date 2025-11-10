@@ -17,3 +17,49 @@
     - progressive CC, say that CC will move from value x to value y over this set amount
       of time or steps
         - can be smooth or stepwise
+
+| ch1, a6, 127 | //this is one midi message
+| ch1, a6, 127 |  ch2, c6, 127 | //they can be played together like this
+
+// first part specifies channel, second is note, third is velocity
+| ch1, c3 | // if no velocity, it assumes max velocity
+
+|ch1,c4,60| // spaces do not matter
+
+// lines that start with a | will be played in time, sequentially
+x // this says to do nothing this line
+
+|ch1, a6, O| //stop playing that note
+|ch1, OFF| // this stops that channel completely
+
+|ch1, cc51, 90| // sets cc51 to 90
+
+| ch1, {c5,e5,g5} | // play multiple notes
+| ch1, R:{a6,b6,c6} | // play randomly from set of notes
+| ch1, R:{a6=5,g7=1} | // weighted random
+| ch1, R:{a3-b4} | // play randomly from range of notes
+| ch1, a5, R:{127} | // also works with velocity and cc. only one number implies 0- that number 
+
+// midi messages, denoted by ||, and sequencer messages, denoted by ~
+// all sequencer messages are functions
+
+~ MACRO(piano, ch1)
+~ MACRO(volume, "ch1,cc89")
+~ MACRO(cmajor, {c5,d5,e5,f5,g5,a6,b6})
+
+@ chorus // defining a section
+
+@ END
+
+~ PLAY(chorus)
+~ PLAY(chorus, 4) // plays section x times and returns
+~ PLAY(chorus, R:{1-3})
+
+~ GO_TO(chorus)
+
+~ SKIP(R:{5})
+
+~ BPM(100)
+
+~ PLAY_ASYNC(chorus)
+
