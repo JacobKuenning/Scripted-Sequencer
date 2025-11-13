@@ -6,15 +6,11 @@
 
 script::script(std::string fileName){
     std::ifstream scriptFile(fileName);
-
     std::string str;
     while (std::getline(scriptFile, str)){
         lines.push_back(str);
     }
-
     cleanScript();
-    findAndReplace("test", "globino");
-    
     return;
 }
 

@@ -34,7 +34,6 @@ x // this says to do nothing this line
 
 |ch1, cc51, 90| // sets cc51 to 90
 
-| ch1, {c5,e5,g5} | // play multiple notes
 | ch1, R:{a6,b6,c6} | // play randomly from set of notes
 | ch1, R:{a6=5,g7=1} | // weighted random
 | ch1, R:{a3-b4} | // play randomly from range of notes

@@ -1,17 +1,14 @@
-all: prog
+TARGET := prog
+SRC := $(wildcard *.cpp)
+OBJ := $(SRC:.cpp=.o)
 
-prog: main.o script.o sequencer.o
-	g++ -o prog main.o script.o sequencer.o -lrtmidi
-	rm *.o
+all: $(TARGET)
 
-main.o: main.cpp
-	g++ -c main.cpp
+$(TARGET): $(OBJ)
+	g++ -o $(TARGET) $(OBJ) -lrtmidi
 
-script.o: script.cpp
-	g++ -c script.cpp
+%.o: %.cpp
+	g++ -c $< -o $@
 
-sequencer.o : sequencer.cpp
-	g++ -c sequencer.cpp
-
-run:
-	./prog text.txt
+clean:
+	rm -f $(OBJ) $(TARGET)
