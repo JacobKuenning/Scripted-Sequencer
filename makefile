@@ -1,13 +1,14 @@
 TARGET := prog
-SRC := $(wildcard *.cpp)
-OBJ := $(SRC:.cpp=.o)
+SRC := $(wildcard *.cpp) # all cpp files
+OBJ := $(SRC:.cpp=.o) # obj is all .o files, their names will be the source files but replace .cpp with .o
+
 
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
 	g++ -o $(TARGET) $(OBJ) -lrtmidi
 
-%.o: %.cpp
+%.o: %.cpp # % matches any file name, %< is the dependency, $@ is the target
 	g++ -c $< -o $@
 
 clean:
