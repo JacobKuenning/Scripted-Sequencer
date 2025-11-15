@@ -1,5 +1,7 @@
 #include "sequencer.h"
 #include "script.h"
+#include "message.h"
+#include "strmidiconv.h"
 #include "rtmidi/RtMidi.h"
 
 #include <chrono>
@@ -7,28 +9,52 @@
 #include <iostream>
 
 sequencer::sequencer(script* scr){
-    RtMidiOut *midiout = new RtMidiOut();
+    midiout = new RtMidiOut();
     midiout->openPort(0);
 
     s = scr;
 
     while (pCounter < s->sLength){
         if (parseLine(pCounter))
-            //printLine(pCounter);
-        wait(1);
+            printLine(pCounter);
+        wait(200);
         pCounter++;
     }
 
     return;
 }
 
+void sequencer::play(message m){
+    if (m.status == 0x80){
+        for (int i: playedNotes[m.channel]){
+            std::vector<unsigned char> v;
+            v.push_back(m.channel | 0x80);
+            v.push_back(i);
+            v.push_back(0);
+            midiout->sendMessage(&v);
+        }
+        playedNotes[m.channel].clear();
+    } else {
+        std::vector<unsigned char> v;
+        v.push_back(m.channel | m.status);
+        v.push_back(m.note);
+        v.push_back(m.velocity);
+        midiout->sendMessage(&v);
+        playedNotes[m.channel].push_back(m.note);
+    }
+}
+
 void sequencer::wait(int s){
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(s));
     return;
 }
 
 bool sequencer::parseLine(int l){
     std::string line = s->getLine(l);
+    if (line[0] == 'x'){
+        return true;
+    }
+
     if (line[0] != '|'){
         error("Syntax Error - Message Not Parsed", l);
         return false;
@@ -38,9 +64,16 @@ bool sequencer::parseLine(int l){
         return false;
     }
 
-    std::vector<std::string> messages = splitIntoMessages(l);
-    for (std::string m : messages){
-        splitIntoArguments(m);
+    std::vector<std::string> messagesText = splitIntoMessages(l);
+    std::vector<message> messages;
+    for (std::string mess : messagesText){
+        std::vector<std::string> args = splitIntoArguments(mess);
+        message m(args);
+        messages.push_back(m);
+    }
+
+    for (message m: messages){
+        play(m);
     }
 
     return true;
@@ -75,12 +108,9 @@ std::vector<std::string> sequencer::splitIntoArguments(std::string m){
     }
     argumentsText.push_back(m.substr(start, end - start));
 
-    for (std::string arg : argumentsText){
-        std::cout << arg << std::endl;
-    }
-
     return argumentsText;
 }
+
 
 
 int sequencer::countMessages(int l){
