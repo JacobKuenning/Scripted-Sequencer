@@ -26,5 +26,8 @@ message::message(std::vector<std::string> args){
         return;
     } 
 
-    velocity = std::stoi(args[2]);
+    if (args[2] == "OFF")
+        velocity = 0;
+    else
+        velocity = std::stoi(args[2]);
 }
