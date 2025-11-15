@@ -10,7 +10,7 @@ class sequencer{
     void wait(int s);
     bool parseLine(int l);
     std::vector<std::string> splitIntoMessages(int l);
-    //std::vector<std::string> splitIntoArguments(std::string m);
+    std::vector<std::string> splitIntoArguments(std::string m);
     int countMessages(int l);
     void printLine(int l);
     void error(std::string message, int l);

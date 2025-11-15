@@ -39,6 +39,9 @@ bool sequencer::parseLine(int l){
     }
 
     std::vector<std::string> messages = splitIntoMessages(l);
+    for (std::string m : messages){
+        splitIntoArguments(m);
+    }
 
     return true;
 }
@@ -59,7 +62,25 @@ std::vector<std::string> sequencer::splitIntoMessages(int l){
     return messagesText;
 }
 
-// std::vector<std::string> splitIntoArguments(std::string m);
+std::vector<std::string> sequencer::splitIntoArguments(std::string m){
+    std::vector<std::string> argumentsText;
+
+    size_t start = 0;
+    size_t end = m.find_first_of(",");
+
+    while (end != std::string::npos){
+        argumentsText.push_back(m.substr(start, end - start));
+        start = end + 1;
+        end = m.find_first_of(",", start);
+    }
+    argumentsText.push_back(m.substr(start, end - start));
+
+    for (std::string arg : argumentsText){
+        std::cout << arg << std::endl;
+    }
+
+    return argumentsText;
+}
 
 
 int sequencer::countMessages(int l){
