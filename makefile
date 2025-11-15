@@ -7,6 +7,7 @@ all: $(TARGET)
 
 $(TARGET): $(OBJ)
 	g++ -o $(TARGET) $(OBJ) -lrtmidi
+	rm -f $(OBJ)
 
 %.o: %.cpp # % matches any file name, %< is the dependency, $@ is the target
 	g++ -c $< -o $@
