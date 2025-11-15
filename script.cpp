@@ -25,12 +25,12 @@ void script::cleanScript(){
         }
     }
 
-    // removing all spaces
+    // removing all spaces and newlines
     for (int j = 0; j < lines.size(); j++){
         std::string l = lines[j];
         int i = 0;
         while (i < l.size()){
-            if (l[i] == ' '){
+            if (l[i] == ' ' || l[i] == '\n'){
                 l.erase(i,1);
             }
             else 
