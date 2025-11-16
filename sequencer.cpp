@@ -15,9 +15,7 @@ sequencer::sequencer(script* scr){
     s = scr;
 
     while (pCounter < s->sLength){
-        if (parseLine(pCounter))
-            printLine(pCounter);
-        wait(200);
+        parseLine(pCounter);
         pCounter++;
     }
 
@@ -44,26 +42,27 @@ void sequencer::play(message m){
     }
 }
 
-void sequencer::wait(int s){
-    std::this_thread::sleep_for(std::chrono::milliseconds(s));
+void sequencer::wait(){
+    std::this_thread::sleep_for(std::chrono::milliseconds(clock));
     return;
 }
 
-bool sequencer::parseLine(int l){
+void sequencer::parseLine(int l){
     std::string line = s->getLine(l);
-    if (line[0] == 'x'){
-        return true;
-    }
+    line = replaceVariables(line);
+    printLine(l);
+    if (line[0] == '|'){
+        parseMessage(line);
+        wait();
+    }     
+    else if (line[0] == 'x')
+        wait();
+    else if (line[0] == '~')
+        parseFunction(line);
+}
 
-    if (line[0] != '|'){
-        error("Syntax Error - Message Not Parsed", l);
-        return false;
-    }
-    if (line[line.size()-1] != '|'){
-        error("Syntax Error - Message Not Parsed", l);
-        return false;
-    }
-
+void sequencer::parseMessage(std::string l){
+    std::string line = l;
     std::vector<std::string> messagesText = splitIntoMessages(l);
     std::vector<message> messages;
     for (std::string mess : messagesText){
@@ -75,12 +74,66 @@ bool sequencer::parseLine(int l){
     for (message m: messages){
         play(m);
     }
-
-    return true;
 }
 
-std::vector<std::string> sequencer::splitIntoMessages(int l){
-    std::string line = s->getLine(l);
+void sequencer::parseFunction(std::string l){
+    std::string line = l.erase(0,1);
+    int startParen = line.find_first_of("(");
+    int endParen = line.find_first_of(")");
+    std::string funcName = line.substr(0, startParen);
+    std::string argText = line.substr(startParen+1, endParen-startParen-1);
+    std::vector<std::string> args = splitIntoArguments(argText);
+    if (funcName == "VARIABLE"){
+        setVariable(args);
+    } else if (funcName == "BPM"){
+        setBPM(args);
+    } else if (funcName == "SUBDIVISIONS"){
+        setSubdivisions(args);
+    } else if (funcName == "CLOCK_MS"){
+        setClock(args);
+    }
+}
+
+void sequencer::setVariable(std::vector<std::string> args){
+    variables[args[0]] = args[1];
+}
+
+void sequencer::setBPM(std::vector<std::string> args){
+    bpm = std::stoi(args[0]);
+    clock = 60000 / (bpm * subdivisons);
+}
+
+void sequencer::setClock(std::vector<std::string> args){
+    clock = std::stoi(args[0]);
+}
+
+
+void sequencer::setSubdivisions(std::vector<std::string> args){
+    subdivisons = std::stoi(args[0]);
+    clock = 60000 / (bpm * subdivisons);
+}
+
+std::string sequencer::replaceVariables(std::string line){
+    std::string copy = line;
+    if (copy.find_first_of("$") == std::string::npos)
+        return copy;
+
+    for (const auto& variable : variables) {
+        int vPos = copy.find("$"+variable.first);
+        while (vPos != std::string::npos)
+        {
+            copy.erase(vPos, variable.first.length()+1);
+            copy.insert(vPos, variable.second);
+            vPos = copy.find("$"+variable.first);
+        }
+        
+    }
+    return copy;
+}
+
+
+std::vector<std::string> sequencer::splitIntoMessages(std::string l){
+    std::string line = l;
     std::vector<std::string> messagesText;
     
     size_t start = 1;
@@ -99,14 +152,23 @@ std::vector<std::string> sequencer::splitIntoArguments(std::string m){
     std::vector<std::string> argumentsText;
 
     size_t start = 0;
-    size_t end = m.find_first_of(",");
+    size_t end = 0;
 
     while (end != std::string::npos){
-        argumentsText.push_back(m.substr(start, end - start));
+        if (m[start] == ',') // for when it just added a quoted arg, the next char will be a comma, so skip it
+            start += 1;
+        if (start >= m.size()) // when last arg is quoted, it will start you at the end of the string, adding an empty arg
+            break;
+        if (m[start] == '\"'){
+            end = m.find_first_of("\"", start+1);
+            argumentsText.push_back(m.substr(start+1, end - start - 1));
+        }
+        else {
+            end = m.find_first_of(",", start);
+            argumentsText.push_back(m.substr(start, end - start));
+        }
         start = end + 1;
-        end = m.find_first_of(",", start);
     }
-    argumentsText.push_back(m.substr(start, end - start));
 
     return argumentsText;
 }
