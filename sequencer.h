@@ -24,6 +24,7 @@ class sequencer{
     void parseLine(int l);
     void parseMessage(std::string l);
     void parseFunction(std::string l);
+    std::string resolveSets(std::string l);
 
     void setVariable(std::vector<std::string> args);
     void setBPM(std::vector<std::string> args);

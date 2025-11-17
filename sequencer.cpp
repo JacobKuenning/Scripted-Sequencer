@@ -7,6 +7,7 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
+#include <random>
 
 sequencer::sequencer(script* scr){
     midiout = new RtMidiOut();
@@ -23,21 +24,20 @@ sequencer::sequencer(script* scr){
 }
 
 void sequencer::play(message m){
+    static unsigned char msg[3];
     if (m.status == 0x80){
         for (int i: playedNotes[m.channel]){
-            std::vector<unsigned char> v;
-            v.push_back(m.channel | 0x80);
-            v.push_back(i);
-            v.push_back(0);
-            midiout->sendMessage(&v);
+            msg[0] = m.channel | 0x80;
+            msg[1] = i;
+            msg[2] = 0;
+            midiout->sendMessage(msg, 3);
         }
         playedNotes[m.channel].clear();
     } else {
-        std::vector<unsigned char> v;
-        v.push_back(m.channel | m.status);
-        v.push_back(m.note);
-        v.push_back(m.velocity);
-        midiout->sendMessage(&v);
+        msg[0] = m.channel | m.status;
+        msg[1] = m.note;
+        msg[2] = m.velocity;
+        midiout->sendMessage(msg, 3);
         playedNotes[m.channel].push_back(m.note);
     }
 }
@@ -50,6 +50,7 @@ void sequencer::wait(){
 void sequencer::parseLine(int l){
     std::string line = s->getLine(l);
     line = replaceVariables(line);
+    line = resolveSets(line);
     printLine(l);
     if (line[0] == '|'){
         parseMessage(line);
@@ -59,6 +60,38 @@ void sequencer::parseLine(int l){
         wait();
     else if (line[0] == '~')
         parseFunction(line);
+}
+
+std::string sequencer::resolveSets(std::string line){
+    if (line.substr(0,9) == "~VARIABLE") // dont resolve sets within variables
+        return line;
+
+    std::vector<std::string> sets;
+    size_t start = line.find_first_of("{");
+    size_t end = line.find_first_of("}");
+
+    if (start == std::string::npos || end == std::string::npos)
+        return line;
+
+    while (end != std::string::npos)
+    {
+        std::string set = line.substr(start, end-start+1);
+        sets.push_back(set);
+        start = end;
+        start = line.find_first_of("{",start);
+        end = line.find_first_of("}",start);
+    }
+    for (std::string s: sets){
+        std::string copy = s;
+        copy = copy.substr(1,copy.length()-2);
+        std::vector<std::string> args = splitIntoArguments(copy);
+        srand(time(0));
+        std::string choice = args[rand() % args.size()];
+        int fpos = line.find(s); 
+        line.erase(fpos,s.size()); // erase set from string 
+        line.insert(fpos,choice); // replace it with chosen argument
+    }
+    return line;
 }
 
 void sequencer::parseMessage(std::string l){
@@ -107,16 +140,16 @@ void sequencer::setClock(std::vector<std::string> args){
     clock = std::stoi(args[0]);
 }
 
-
 void sequencer::setSubdivisions(std::vector<std::string> args){
     subdivisons = std::stoi(args[0]);
     clock = 60000 / (bpm * subdivisons);
 }
 
 std::string sequencer::replaceVariables(std::string line){
+    if (line.find_first_of("$") == std::string::npos)
+        return line;
+
     std::string copy = line;
-    if (copy.find_first_of("$") == std::string::npos)
-        return copy;
 
     for (const auto& variable : variables) {
         int vPos = copy.find("$"+variable.first);
@@ -130,7 +163,6 @@ std::string sequencer::replaceVariables(std::string line){
     }
     return copy;
 }
-
 
 std::vector<std::string> sequencer::splitIntoMessages(std::string l){
     std::string line = l;
@@ -171,18 +203,6 @@ std::vector<std::string> sequencer::splitIntoArguments(std::string m){
     }
 
     return argumentsText;
-}
-
-
-
-int sequencer::countMessages(int l){
-    std::string line = s->getLine(l);
-    int sum = 0;
-    for (char c : line){
-        if (c == '|')
-            sum += 1;
-    }
-    return sum - 1;
 }
 
 void sequencer::printLine(int l){
