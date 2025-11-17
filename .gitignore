@@ -1,3 +1,5 @@
 a.out
 *.txt
+*.o
+obj
 prog
