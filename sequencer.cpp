@@ -25,8 +25,8 @@ sequencer::sequencer(script* scr){
 
 void sequencer::play(message m){
     static unsigned char msg[3];
-    if (m.status == 0x80){
-        for (int i: playedNotes[m.channel]){
+    if (m.status == 0x80){ // if we have a channel wide note off
+        for (int i: playedNotes[m.channel]){ // turn off all previous (UNIQUE!!!!!) notes
             msg[0] = m.channel | 0x80;
             msg[1] = i;
             msg[2] = 0;
@@ -38,6 +38,12 @@ void sequencer::play(message m){
         msg[1] = m.note;
         msg[2] = m.velocity;
         midiout->sendMessage(msg, 3);
+
+        // check if note is already in the played notes vector, add it to vector if not
+        for (int note : playedNotes[m.channel]){
+            if (m.note == note)
+                return; 
+        }
         playedNotes[m.channel].push_back(m.note);
     }
 }
@@ -49,19 +55,24 @@ void sequencer::wait(){
 
 void sequencer::parseLine(int l){
     std::string line = s->getLine(l);
-    line = replaceVariables(line);
-    line = resolveSets(line);
+
     printLine(l);
-    if (line[0] == '|'){
+    if (line[0] == '|'){ // if the line is a message
+        line = replaceVariables(line);
+        line = resolveSets(line);
         parseMessage(line);
         wait();
     }     
-    else if (line[0] == 'x')
-        wait();
-    else if (line[0] == '~')
+    else if (line[0] == '~'){ // function
+        line = replaceVariables(line);
+        line = resolveSets(line);
         parseFunction(line);
+    }
+    else if (line[0] == 'x') // empty line
+        wait();
 }
 
+//finds all sets, replaces it with a random choice of things within the set
 std::string sequencer::resolveSets(std::string line){
     if (line.substr(0,9) == "~VARIABLE") // dont resolve sets within variables
         return line;
