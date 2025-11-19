@@ -11,6 +11,8 @@ script::script(std::string fileName){
         lines.push_back(str);
     }
     cleanScript();
+    findSections();
+
     return;
 }
 
@@ -49,6 +51,18 @@ void script::cleanScript(){
     lines = copy;
     sLength = lines.size();
     return;
+}
+
+void script::findSections(){
+    for (int i = 0; i < sLength; i++){
+        std::string l = lines[i];
+        if (l[0] == '@'){
+            if (l.substr(1,l.size()-1) != "END"){
+                std::string name = l.substr(1,l.size()-1);
+                sections[name] = i;
+            }
+        }
+    }
 }
 
 void script::findAndReplace(std::string f, std::string r){

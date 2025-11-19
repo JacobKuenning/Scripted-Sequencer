@@ -19,6 +19,9 @@ class sequencer{
     int clock = 600;
     int subdivisons = 4;
     int bpm = 100;
+
+    std::vector<int> addrStack;
+
     std::map<std::string,std::string> variables;
     void wait();
     void parseLine(int l);
@@ -26,14 +29,19 @@ class sequencer{
     void parseFunction(std::string l);
     std::string resolveSets(std::string l);
 
-    void setVariable(std::vector<std::string> args);
+    void setVariable(std::string line);
     void setBPM(std::vector<std::string> args);
     void setSubdivisions(std::vector<std::string> args);
     void setClock(std::vector<std::string> args);
 
+    void skipLines(std::vector<std::string> args);
+    void playSection(std::vector<std::string> args);
+
     std::string replaceVariables(std::string line);
     std::vector<std::string> splitIntoMessages(std::string l);
     std::vector<std::string> splitIntoArguments(std::string m);
+    std::vector<std::string> weightArguments(std::vector<std::string> args);
+
     int countMessages(int l);
     void printLine(int l);
     void error(std::string message, int l);
