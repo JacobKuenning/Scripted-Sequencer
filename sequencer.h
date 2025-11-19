@@ -17,7 +17,7 @@ class sequencer{
     script* s;
     RtMidiOut *midiout;
     int clock = 600;
-    int subdivisons = 4;
+    int subdivisons = 1;
     int bpm = 100;
 
     std::vector<int> addrStack;
@@ -37,14 +37,17 @@ class sequencer{
     void skipLines(std::vector<std::string> args);
     void playSection(std::vector<std::string> args);
 
+    void waitMilliseconds(std::vector<std::string> args);
+
     std::string replaceVariables(std::string line);
     std::vector<std::string> splitIntoMessages(std::string l);
     std::vector<std::string> splitIntoArguments(std::string m);
     std::vector<std::string> weightArguments(std::vector<std::string> args);
 
     int countMessages(int l);
-    void printLine(int l);
+    void printLine(std::string l);
     void error(std::string message, int l);
+    void debug(std::string m);
     int pCounter = 0;
     std::vector<int> playedNotes[16];
 };

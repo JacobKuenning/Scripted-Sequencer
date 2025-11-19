@@ -10,7 +10,6 @@
 #include <random>
 
 sequencer::sequencer(script* scr){
-    std::cout << "CREATED SEQUENCER" << std::endl;
     midiout = new RtMidiOut();
     midiout->openPort(0);
 
@@ -26,20 +25,20 @@ sequencer::sequencer(script* scr){
 }
 
 void sequencer::play(message m){
-    unsigned char msg[3];
+    std::vector<unsigned char> msg(3);
     if (m.status == 0x80){ // if we have a channel wide note off
         for (int i: playedNotes[m.channel]){ 
             msg[0] = m.channel | 0x80;
             msg[1] = i;
             msg[2] = 0;
-            midiout->sendMessage(msg, 3);
+            midiout->sendMessage(&msg);
         }
         playedNotes[m.channel].clear();
     } else {
         msg[0] = m.channel | m.status;
         msg[1] = m.note;
         msg[2] = m.velocity;
-        midiout->sendMessage(msg, 3);
+        midiout->sendMessage(&msg);
         // check if note is already in the played notes vector, add it to vector if not
         for (int note : playedNotes[m.channel]){
             if (m.note == note){
@@ -57,7 +56,6 @@ void sequencer::wait(){
 
 void sequencer::parseLine(int l){
     std::string line = s->getLine(l);
-    printLine(l);
 
     if (line == "@END"){
         if (!addrStack.empty()){
@@ -66,25 +64,29 @@ void sequencer::parseLine(int l){
         }
     }
 
-    if (line[0] == '-'){
+    char c = line[0];
+
+    if (c == '-'){
         setVariable(line);
     }
     else { 
         line = replaceVariables(line);
         line = resolveSets(line);
 
-        if (line[0] == '|'){ // if the line is a message
+        if (c == '|'){ // if the line is a message
+            printLine(line);
             parseMessage(line);
             wait();
         }     
-        else if (line[0] == '~'){ // function
+        else if (c == '~'){ // function
+            printLine(line);
             parseFunction(line);
         }
-        else if (line[0] == 'x') // empty line
+        else if (c == 'x'){ // empty line
+            printLine(line);   
             wait();
         }
-
-
+    }
 }
 
 //finds all sets, replaces it with a random choice of things within the set
@@ -148,6 +150,8 @@ void sequencer::parseFunction(std::string l){
         skipLines(args);
     } else if (funcName == "PLAY"){
         playSection(args);
+    } else if (funcName == "WAIT_MS"){
+        waitMilliseconds(args);
     }
 }
 
@@ -177,6 +181,11 @@ void sequencer::setSubdivisions(std::vector<std::string> args){
 void sequencer::skipLines(std::vector<std::string> args){
     int by = std::stoi(args[0]);
     pCounter += by;
+}
+
+void sequencer::waitMilliseconds(std::vector<std::string> args){
+    int ms = stoi(args[0]);
+    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
 void sequencer::playSection(std::vector<std::string> args){
@@ -266,11 +275,15 @@ std::vector<std::string> sequencer::weightArguments(std::vector<std::string> arg
     return weightedArgs;
 }
 
-void sequencer::printLine(int l){
-    std::cout << s->getLine(l) << std::endl;
+void sequencer::printLine(std::string l){
+    std::cout << "[" << pCounter << "] " << l << std::endl;
 }
 
 void sequencer::error(std::string message, int l){
     std::cout << "Line (" << l << "): " << message << std::endl;
     std::cout << "--- " << s->getLine(l) << " ---" << std::endl;
+}
+
+void sequencer::debug(std::string m){
+    std::cout << m << std::endl;
 }
