@@ -16,7 +16,10 @@ class sequencer{
     void play(message m);
     script* s;
     RtMidiOut *midiout;
-    int clock = 600;
+
+    int increment = 1;
+    std::vector<int> incStack;
+    int clock = 0;
     int subdivisons = 1;
     int bpm = 100;
 
@@ -32,19 +35,20 @@ class sequencer{
     void setVariable(std::string line);
     void setBPM(std::vector<std::string> args);
     void setSubdivisions(std::vector<std::string> args);
-    void setClock(std::vector<std::string> args);
 
     void skipLines(std::vector<std::string> args);
     void playSection(std::vector<std::string> args);
 
     void waitMilliseconds(std::vector<std::string> args);
 
+    void changeIncrement(std::vector<std::string> args);
+    void reverse(std::vector<std::string> args);
+
     std::string replaceVariables(std::string line);
     std::vector<std::string> splitIntoMessages(std::string l);
     std::vector<std::string> splitIntoArguments(std::string m);
     std::vector<std::string> weightArguments(std::vector<std::string> args);
 
-    int countMessages(int l);
     void printLine(std::string l);
     void error(std::string message, int l);
     void debug(std::string m);

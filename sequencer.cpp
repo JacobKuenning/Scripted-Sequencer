@@ -13,12 +13,20 @@ sequencer::sequencer(script* scr){
     midiout = new RtMidiOut();
     midiout->openPort(0);
 
+    clock = 60000 / (bpm*subdivisons);
+
     s = scr;
     srand(time(0));
 
     while (pCounter < s->sLength){
         parseLine(pCounter);
-        pCounter++;
+        if (!incStack.empty()){
+            pCounter += incStack.back();
+            incStack.pop_back();
+        }
+        else{
+            pCounter += increment;
+        }   
     }
 
     return;
@@ -89,7 +97,7 @@ void sequencer::parseLine(int l){
     }
 }
 
-//finds all sets, replaces it with a random choice of things within the set
+//finds all lists, replaces it with a random choice of things within the set
 std::string sequencer::resolveSets(std::string line){
     std::vector<std::string> sets;
     size_t start = line.find_first_of("{");
@@ -144,14 +152,16 @@ void sequencer::parseFunction(std::string l){
         setBPM(args);
     } else if (funcName == "SUBDIVISIONS"){
         setSubdivisions(args);
-    } else if (funcName == "CLOCK_MS"){
-        setClock(args);
     } else if (funcName == "SKIP"){
         skipLines(args);
     } else if (funcName == "PLAY"){
         playSection(args);
     } else if (funcName == "WAIT_MS"){
         waitMilliseconds(args);
+    } else if (funcName == "CHANGE_INCREMENT"){
+        changeIncrement(args);
+    } else if (funcName == "REVERSE"){
+        reverse(args);
     }
 }
 
@@ -167,10 +177,6 @@ void sequencer::setVariable(std::string l){
 void sequencer::setBPM(std::vector<std::string> args){
     bpm = std::stoi(args[0]);
     clock = 60000 / (bpm * subdivisons);
-}
-
-void sequencer::setClock(std::vector<std::string> args){
-    clock = std::stoi(args[0]);
 }
 
 void sequencer::setSubdivisions(std::vector<std::string> args){
@@ -191,6 +197,30 @@ void sequencer::waitMilliseconds(std::vector<std::string> args){
 void sequencer::playSection(std::vector<std::string> args){
     addrStack.push_back(pCounter);
     pCounter = s->sections[args[0]] -1;
+}
+
+void sequencer::changeIncrement(std::vector<std::string> args){
+    int argSize = args.size();
+
+    if (argSize == 1){ // change increment
+        int change = std::stoi(args[0]);
+        increment = change;  
+    } else { // add to increment stack
+        for (int i = argSize - 1; i >= 0; i--){ // traverse in backwards order
+            int a = std::stoi(args[i]);
+            incStack.push_back(a);
+        }
+    }
+      
+}
+
+void sequencer::reverse(std::vector<std::string> args){
+    int amount = std::stoi(args[0]);
+    for (int i = 0; i < amount; i++)
+    {
+        incStack.push_back(-1);
+    }
+    
 }
 
 std::string sequencer::replaceVariables(std::string line){
