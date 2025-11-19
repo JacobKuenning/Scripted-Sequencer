@@ -179,7 +179,7 @@ void sequencer::setSubdivisions(std::vector<std::string> args){
 }
 
 void sequencer::skipLines(std::vector<std::string> args){
-    int by = std::stoi(args[0]);
+    int by = std::stoi(args[0]) - 1;
     pCounter += by;
 }
 
