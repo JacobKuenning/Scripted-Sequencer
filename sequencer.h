@@ -10,6 +10,17 @@ enum function : int{
     VARIABLE
 };
 
+enum color : int{
+    BLACK = 30,
+    RED,
+    GREEN,
+    YELLOW,
+    BLUE,
+    MAGENTA,
+    CYAN,
+    WHITE
+};
+
 class sequencer{
     public:
     sequencer(script* s);
@@ -38,6 +49,8 @@ class sequencer{
 
     void skipLines(std::vector<std::string> args);
     void playSection(std::vector<std::string> args);
+    void goToLine(std::vector<std::string> args);
+    void finish(std::vector<std::string> args);
 
     void waitMilliseconds(std::vector<std::string> args);
 
@@ -49,7 +62,7 @@ class sequencer{
     std::vector<std::string> splitIntoArguments(std::string m);
     std::vector<std::string> weightArguments(std::vector<std::string> args);
 
-    void printLine(std::string l);
+    void printLine(std::string l, color c);
     void error(std::string message, int l);
     void debug(std::string m);
     int pCounter = 0;

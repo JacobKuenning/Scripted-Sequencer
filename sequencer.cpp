@@ -76,23 +76,28 @@ void sequencer::parseLine(int l){
 
     if (c == '-'){
         setVariable(line);
+        printLine(line, GREEN);
     }
     else { 
         line = replaceVariables(line);
         line = resolveSets(line);
+        c = line[0];
 
         if (c == '|'){ // if the line is a message
-            printLine(line);
+            printLine(line, BLUE);
             parseMessage(line);
             wait();
         }     
         else if (c == '~'){ // function
-            printLine(line);
+            printLine(line, MAGENTA);
             parseFunction(line);
         }
         else if (c == 'x'){ // empty line
-            printLine(line);   
+            printLine(line, BLUE);   
             wait();
+        }
+        else if (c == '@'){
+            printLine(line,CYAN);
         }
     }
 }
@@ -162,6 +167,10 @@ void sequencer::parseFunction(std::string l){
         changeIncrement(args);
     } else if (funcName == "REVERSE"){
         reverse(args);
+    } else if (funcName == "GO_TO"){
+        goToLine(args);
+    } else if (funcName == "FINISH"){
+        finish(args);
     }
 }
 
@@ -187,6 +196,15 @@ void sequencer::setSubdivisions(std::vector<std::string> args){
 void sequencer::skipLines(std::vector<std::string> args){
     int by = std::stoi(args[0]) - 1;
     pCounter += by;
+}
+
+void sequencer::goToLine(std::vector<std::string> args){
+    int l = std::stoi(args[0]);
+    pCounter = l - 1;
+}
+
+void sequencer::finish(std::vector<std::string> args){
+    pCounter = s->sLength;
 }
 
 void sequencer::waitMilliseconds(std::vector<std::string> args){
@@ -240,7 +258,6 @@ std::string sequencer::replaceVariables(std::string line){
             }  
         }
     }
-
     return copy;
 }
 
@@ -305,8 +322,19 @@ std::vector<std::string> sequencer::weightArguments(std::vector<std::string> arg
     return weightedArgs;
 }
 
-void sequencer::printLine(std::string l){
-    std::cout << "[" << pCounter << "] " << l << std::endl;
+void sequencer::printLine(std::string l, color c){
+    int colorInt = static_cast<int>(c);
+    std::string wrap = "\033[" + std::to_string(colorInt) + 'm' + l + "\033[0m";
+    std::string spaces;
+    if (pCounter >= 0 && pCounter < 10){ // keeps all of the output in line
+        spaces = "   ";
+    } else if (pCounter >= 10 && pCounter < 100){
+        spaces = "  ";
+    } else {
+        spaces = " ";
+    }
+
+    std::cout << "[" << pCounter << "] " << spaces << wrap << std::endl;
 }
 
 void sequencer::error(std::string message, int l){
