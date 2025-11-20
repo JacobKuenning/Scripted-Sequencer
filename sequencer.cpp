@@ -223,13 +223,7 @@ void sequencer::changeIncrement(std::vector<std::string> args){
     if (argSize == 1){ // change increment
         int change = std::stoi(args[0]);
         increment = change;  
-    } else { // add to increment stack
-        for (int i = argSize - 1; i >= 0; i--){ // traverse in backwards order
-            int a = std::stoi(args[i]);
-            incStack.push_back(a);
-        }
-    }
-      
+    } 
 }
 
 void sequencer::reverse(std::vector<std::string> args){
