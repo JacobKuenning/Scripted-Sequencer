@@ -163,7 +163,7 @@ void sequencer::parseFunction(std::string l){
         playSection(args);
     } else if (funcName == "WAIT_MS"){
         waitMilliseconds(args);
-    } else if (funcName == "CHANGE_INCREMENT"){
+    } else if (funcName == "INCREMENT"){
         changeIncrement(args);
     } else if (funcName == "REVERSE"){
         reverse(args);
