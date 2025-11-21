@@ -1,7 +1,7 @@
 #include "sequencer.h"
 #include "script.h"
 #include "message.h"
-#include "strmidiconv.h"
+#include "conv.h"
 #include "rtmidi/RtMidi.h"
 
 #include <chrono>
@@ -12,6 +12,8 @@
 sequencer::sequencer(script* scr){
     midiout = new RtMidiOut();
     midiout->openPort(0);
+
+    readConfig();
 
     clock = 60000 / (bpm*subdivisons);
 

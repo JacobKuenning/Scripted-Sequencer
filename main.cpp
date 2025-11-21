@@ -6,3 +6,4 @@ int main(int argc, char** argv){
     sequencer seq(&s);
     return 0;
 }
+

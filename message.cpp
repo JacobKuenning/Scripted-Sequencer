@@ -1,5 +1,5 @@
 #include "message.h"
-#include "strmidiconv.h"
+#include "conv.h"
 
 message::message(int ch, int n, int v){
     channel = ch;

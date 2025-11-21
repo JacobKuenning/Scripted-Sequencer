@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include "conv.h"
 
 int channelToInt(std::string ch){
     ch.erase(0,2);
@@ -54,4 +55,23 @@ int noteToInt(std::string n){
     }
 
     return note + (octave * 12); 
+}
+
+color stringToColor(std::string str){
+    if (str == "RED")
+        return RED;
+    else if (str == "BLUE")
+        return BLUE;
+    else if (str == "CYAN")
+        return CYAN;
+    else if (str == "MAGENTA")
+        return MAGENTA;
+    else if (str == "YELLOW")
+        return YELLOW;
+    else if (str == "BLACK")
+        return BLACK;
+    else if (str == "GREEN")
+        return GREEN;
+    else 
+        return WHITE;
 }

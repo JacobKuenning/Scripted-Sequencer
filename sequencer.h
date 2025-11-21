@@ -2,23 +2,13 @@
 #include <vector>
 #include <map>
 #include "rtmidi/RtMidi.h"
+#include "color.h"
 
 class script;
 class message;
 
 enum function : int{
     VARIABLE
-};
-
-enum color : int{
-    BLACK = 30,
-    RED,
-    GREEN,
-    YELLOW,
-    BLUE,
-    MAGENTA,
-    CYAN,
-    WHITE
 };
 
 class sequencer{
@@ -36,6 +26,9 @@ class sequencer{
     int bpm = 100;
     std::vector<int> addrStack;
     std::map<std::string,std::string> variables;
+
+    void readConfig();
+    void parseConfigLine(std::string);
 
     color functionColor = MAGENTA;
     color messageColor = BLUE;
