@@ -14,9 +14,9 @@ script* s;
 // create new sequencer, start it at line i, it will run until it reaches an @ END
 void branch(int i){
     sequencer* seq = new sequencer(s,false,i,branch);
+    seqs.push_back(seq);
     std::thread seqThread(&sequencer::run, seq);
     threads.push_back(std::move(seqThread));
-    std::cout << "SUCCESSFUL BRANCH" << std::endl;
 
     return;
 }
@@ -24,12 +24,17 @@ void branch(int i){
 int main(int argc, char** argv){
     s = new script(argv[1]); // create script
     sequencer* seq = new sequencer(s,true,0,branch);
+    seqs.push_back(seq);
     std::thread seqThread(&sequencer::run, seq);
     threads.push_back(std::move(seqThread)); // cant copy threads
 
-    for (std::thread &t : threads){
-        t.join();
+    for (std::thread &t : threads) {
+        if (t.joinable()) {
+            t.join();
+            break;
+        }
     }
+
 
     return 0;
 }

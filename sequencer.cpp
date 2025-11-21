@@ -22,7 +22,7 @@ sequencer::sequencer(script* scr, bool msq, int start, std::function<void(int i)
     midiout = new RtMidiOut();
     midiout->openPort(0);
 
-    setRawMode(true);
+    //setRawMode(true);
     readConfig();
 
     clock = 60000 / (bpm*subdivisons);
@@ -48,24 +48,8 @@ void sequencer::run(){
 
 // deconstructor
 sequencer::~sequencer() {
-    if (inputThread.joinable()) {
-        inputThread.join(); // waits for manageInput() to finish
-    }
-    setRawMode(false); // always restore terminal
+    //setRawMode(false); // always restore terminal
 }
-
-// this runs seperately from the main loop
-// void sequencer::manageInput(){
-//     while(running){
-//         int c = getchar();
-
-//         if (c == 'q'){
-//             if (killMidiOnQuit) killAllMidi();
-//             running = false; // end all loops
-//         }
-//     }
-//     return;
-// }
 
 void sequencer::play(message m){
     std::vector<unsigned char> msg(3);
