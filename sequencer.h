@@ -1,8 +1,11 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <thread>
+#include <atomic>
 #include "rtmidi/RtMidi.h"
 #include "color.h"
+
 
 class script;
 class message;
@@ -15,7 +18,13 @@ enum function : int{
 class sequencer{
     public:
     sequencer(script* s);
+    void run();
+    ~sequencer();
+    std::atomic<bool> running = true;
+    std::thread inputThread;
     void play(message m);
+    void manageInput();
+    void setRawMode(bool enable);
     script* s;
     RtMidiOut *midiout;
 
@@ -32,6 +41,7 @@ class sequencer{
     void parseConfigLine(std::string);
     bool useDefChannel = false;
     int defaultChannel = 1;
+    bool killMidiOnQuit = true;
 
     color functionColor = MAGENTA;
     color messageColor = BLUE;
@@ -67,6 +77,7 @@ class sequencer{
     std::vector<std::string> splitIntoArguments(std::string m);
     std::vector<std::string> weightArguments(std::vector<std::string> args);
 
+    void killAllMidi();
     void printLine(std::string l, color c, backgroundcolor bg);
     void error(std::string message, int l);
     void debug(std::string m);

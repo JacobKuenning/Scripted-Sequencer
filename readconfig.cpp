@@ -56,5 +56,10 @@ void sequencer::parseConfigLine(std::string line){
         }
         else
             useDefChannel = false;
+    } else if (var == "killMidiOnQuit"){
+        if (value == "TRUE")
+            killMidiOnQuit = true;
+        else
+            killMidiOnQuit = false;
     }
 }

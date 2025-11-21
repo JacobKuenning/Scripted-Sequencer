@@ -10,18 +10,27 @@
 #include <iostream>
 #include <random>
 
+// for input
+#include <termios.h>
+#include <unistd.h>
+
 sequencer::sequencer(script* scr){
     midiout = new RtMidiOut();
     midiout->openPort(0);
 
+    setRawMode(true);
     readConfig();
 
     clock = 60000 / (bpm*subdivisons);
-
     s = scr;
     srand(time(0));
 
-    while (pCounter < s->sLength){
+    // start input thread after everything is initialized
+    inputThread = std::thread(&sequencer::manageInput, this);
+}
+
+void sequencer::run(){
+    while (running && pCounter < s->sLength){
         parseLine(pCounter);
         if (!incStack.empty()){
             pCounter += incStack.back();
@@ -31,7 +40,26 @@ sequencer::sequencer(script* scr){
             pCounter += increment;
         }   
     }
+}
 
+// deconstructor
+sequencer::~sequencer() {
+    if (inputThread.joinable()) {
+        inputThread.join(); // waits for manageInput() to finish
+    }
+    setRawMode(false); // always restore terminal
+}
+
+// this runs seperately from the main loop
+void sequencer::manageInput(){
+    while(running){
+        int c = getchar();
+
+        if (c == 'q'){
+            if (killMidiOnQuit) killAllMidi();
+            running = false; // end all loops
+        }
+    }
     return;
 }
 
@@ -375,4 +403,35 @@ void sequencer::error(std::string message, int l){
 
 void sequencer::debug(std::string m){
     std::cout << m << std::endl;
+}
+
+// turns off canonical mode, to detect key presses immediately
+void sequencer::setRawMode(bool enable) {
+    static termios oldt;
+    termios newt;
+
+    if (enable) {
+        tcgetattr(STDIN_FILENO, &oldt);
+        newt = oldt;
+        newt.c_lflag &= ~(ICANON | ECHO);  // no buffering, no echo
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    } else {
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    }
+}
+
+void sequencer::killAllMidi(){
+    std::vector<message> offMessages;
+
+    for (int i = 0; i < 16; i++){
+        for (int n = 0; n < 108; n++)
+        {
+            std::vector<unsigned char> msg(3);
+            msg[0] = i | 0x80;
+            msg[1] = n;
+            msg[2] = 0;
+            midiout->sendMessage(&msg);
+        }
+        
+    }
 }
