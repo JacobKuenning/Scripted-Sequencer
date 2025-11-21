@@ -15,7 +15,6 @@ sequencer::sequencer(script* scr){
     midiout->openPort(0);
 
     readConfig();
-    std::cout << messageBackground << std::endl;
 
     clock = 60000 / (bpm*subdivisons);
 
