@@ -1,8 +1,11 @@
+#pragma once
+
 #include <string>
 #include <vector>
 #include <map>
 #include <thread>
 #include <atomic>
+#include <functional>
 #include "rtmidi/RtMidi.h"
 #include "color.h"
 
@@ -17,10 +20,12 @@ enum function : int{
 
 class sequencer{
     public:
-    sequencer(script* s);
+    sequencer(script* s, bool msq, int start, std::function<void(int i)> cb);
     void run();
     ~sequencer();
+    std::function<void(int i)> branch;
     std::atomic<bool> running = true;
+    bool mainSequencer = false;
     std::thread inputThread;
     void play(message m);
     void manageInput();
@@ -66,6 +71,7 @@ class sequencer{
 
     void skipLines(std::vector<std::string> args);
     void playSection(std::vector<std::string> args);
+    void playSectionAsync(std::vector<std::string> args);
     void goToLine(std::vector<std::string> args);
     void finish(std::vector<std::string> args);
 

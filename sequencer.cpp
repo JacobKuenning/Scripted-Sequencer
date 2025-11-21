@@ -9,12 +9,16 @@
 #include <thread>
 #include <iostream>
 #include <random>
+#include <functional>
 
 // for input
 #include <termios.h>
 #include <unistd.h>
 
-sequencer::sequencer(script* scr){
+sequencer::sequencer(script* scr, bool msq, int start, std::function<void(int i)> cb){
+    branch = cb;
+    mainSequencer = msq;
+    pCounter = start;
     midiout = new RtMidiOut();
     midiout->openPort(0);
 
@@ -26,7 +30,7 @@ sequencer::sequencer(script* scr){
     srand(time(0));
 
     // start input thread after everything is initialized
-    inputThread = std::thread(&sequencer::manageInput, this);
+    // inputThread = std::thread(&sequencer::manageInput, this);
 }
 
 void sequencer::run(){
@@ -51,17 +55,17 @@ sequencer::~sequencer() {
 }
 
 // this runs seperately from the main loop
-void sequencer::manageInput(){
-    while(running){
-        int c = getchar();
+// void sequencer::manageInput(){
+//     while(running){
+//         int c = getchar();
 
-        if (c == 'q'){
-            if (killMidiOnQuit) killAllMidi();
-            running = false; // end all loops
-        }
-    }
-    return;
-}
+//         if (c == 'q'){
+//             if (killMidiOnQuit) killAllMidi();
+//             running = false; // end all loops
+//         }
+//     }
+//     return;
+// }
 
 void sequencer::play(message m){
     std::vector<unsigned char> msg(3);
@@ -99,6 +103,7 @@ void sequencer::parseLine(int l){
     std::string line = s->getLine(l);
 
     if (line == "@END"){
+        if (!mainSequencer) running = false; // shut down if not the main sequencer
         if (!addrStack.empty()){
             pCounter = addrStack.back();
             addrStack.pop_back();
@@ -198,6 +203,8 @@ void sequencer::parseFunction(std::string l){
         skipLines(args);
     } else if (funcName == "PLAY"){
         playSection(args);
+    } else if (funcName == "PLAY_ASYNC"){
+        playSectionAsync(args);
     } else if (funcName == "WAIT_MS"){
         waitMilliseconds(args);
     } else if (funcName == "SET_dINCREMENT"){
@@ -271,6 +278,10 @@ void sequencer::waitMilliseconds(std::vector<std::string> args){
 void sequencer::playSection(std::vector<std::string> args){
     addrStack.push_back(pCounter);
     pCounter = s->sections[args[0]] -1;
+}
+
+void sequencer::playSectionAsync(std::vector<std::string> args){
+    branch(s->sections[args[0]] - 1);
 }
 
 void sequencer::changeIncrement(std::vector<std::string> args){
