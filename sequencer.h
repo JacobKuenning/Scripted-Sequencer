@@ -28,16 +28,20 @@ class sequencer{
     script* s;
     RtMidiOut *midiout;
 
+    int pCounter = 0;
     int increment = 1;
     std::vector<int> incStack;
     int clock = 0;
     int subdivisons = 1;
     int bpm = 100;
-
     std::vector<int> addrStack;
-
     std::map<std::string,std::string> variables;
-    void wait();
+
+    color functionColor = MAGENTA;
+    color messageColor = BLUE;
+    color sectionColor = CYAN;
+    color variableColor = GREEN;
+
     void parseLine(int l);
     void parseMessage(std::string l);
     void parseFunction(std::string l);
@@ -46,13 +50,13 @@ class sequencer{
     void setVariable(std::string line);
     void setBPM(std::vector<std::string> args);
     void setSubdivisions(std::vector<std::string> args);
+    void wait();
+    void waitMilliseconds(std::vector<std::string> args);
 
     void skipLines(std::vector<std::string> args);
     void playSection(std::vector<std::string> args);
     void goToLine(std::vector<std::string> args);
     void finish(std::vector<std::string> args);
-
-    void waitMilliseconds(std::vector<std::string> args);
 
     void changeIncrement(std::vector<std::string> args);
     void reverse(std::vector<std::string> args);
@@ -65,7 +69,6 @@ class sequencer{
     void printLine(std::string l, color c);
     void error(std::string message, int l);
     void debug(std::string m);
-    int pCounter = 0;
     std::vector<int> playedNotes[16];
 };
 

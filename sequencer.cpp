@@ -76,7 +76,7 @@ void sequencer::parseLine(int l){
 
     if (c == '-'){
         setVariable(line);
-        printLine(line, GREEN);
+        printLine(line, variableColor);
     }
     else { 
         line = replaceVariables(line);
@@ -84,20 +84,20 @@ void sequencer::parseLine(int l){
         c = line[0];
 
         if (c == '|'){ // if the line is a message
-            printLine(line, BLUE);
+            printLine(line, messageColor);
             parseMessage(line);
             wait();
         }     
         else if (c == '~'){ // function
-            printLine(line, MAGENTA);
+            printLine(line, functionColor);
             parseFunction(line);
         }
         else if (c == 'x'){ // empty line
-            printLine(line, BLUE);   
+            printLine(line, messageColor);   
             wait();
         }
         else if (c == '@'){
-            printLine(line,CYAN);
+            printLine(line,sectionColor);
         }
     }
 }
@@ -153,9 +153,9 @@ void sequencer::parseFunction(std::string l){
     std::string funcName = line.substr(0, startParen);
     std::string argText = line.substr(startParen+1, endParen-startParen-1);
     std::vector<std::string> args = splitIntoArguments(argText);
-    if (funcName == "BPM"){
+    if (funcName == "SET_BPM"){
         setBPM(args);
-    } else if (funcName == "SUBDIVISIONS"){
+    } else if (funcName == "SET_SUBDIVISIONS"){
         setSubdivisions(args);
     } else if (funcName == "SKIP"){
         skipLines(args);
@@ -163,7 +163,7 @@ void sequencer::parseFunction(std::string l){
         playSection(args);
     } else if (funcName == "WAIT_MS"){
         waitMilliseconds(args);
-    } else if (funcName == "INCREMENT"){
+    } else if (funcName == "SET_dINCREMENT"){
         changeIncrement(args);
     } else if (funcName == "REVERSE"){
         reverse(args);
