@@ -6,6 +6,7 @@
 
 class script;
 class message;
+class variable;
 
 enum function : int{
     VARIABLE
@@ -25,7 +26,7 @@ class sequencer{
     int subdivisons = 1;
     int bpm = 100;
     std::vector<int> addrStack;
-    std::map<std::string,std::string> variables;
+    std::vector<variable*> variables;
 
     void readConfig();
     void parseConfigLine(std::string);

@@ -1,6 +1,7 @@
 #include "sequencer.h"
 #include "script.h"
 #include "message.h"
+#include "variable.h"
 #include "conv.h"
 #include "rtmidi/RtMidi.h"
 
@@ -45,10 +46,12 @@ void sequencer::play(message m){
         }
         playedNotes[m.channel].clear();
     } else {
-        msg[0] = m.channel | m.status;
+        msg[0] = m.channel + m.status;
         msg[1] = m.note;
         msg[2] = m.velocity;
         midiout->sendMessage(&msg);
+        if (m.status == 0xB0) return; // if cc message, no need to go further
+
         // check if note is already in the played notes vector, add it to vector if not
         for (int note : playedNotes[m.channel]){
             if (m.note == note){
@@ -182,7 +185,26 @@ void sequencer::setVariable(std::string l){
     int spacePos = line.find_first_of("=");
     std::string name = line.substr(0,spacePos);
     std::string value = line.substr(spacePos + 1, line.size()- spacePos);
-    variables[name] = value;
+    std::vector<std::string> values;
+
+    int bPos = value.find_first_of("[");
+    if (bPos == std::string::npos){ // if there's no brackets
+        values.push_back(value);
+    } else {
+        value = value.substr(1,value.size()-2);
+        values = splitIntoArguments(value);
+    }
+
+    // if variable already exists
+    for (variable* v : variables){
+        if (v->name == name){
+            v->setValues(values);
+            return;
+        }
+    }
+    // otherwise, create new value
+    variable* v = new variable(name,values);
+    variables.push_back(v);
 }
 
 void sequencer::setBPM(std::vector<std::string> args){
@@ -244,13 +266,14 @@ std::string sequencer::replaceVariables(std::string line){
     std::string copy = line;
 
     while (copy.find_first_of("$") != std::string::npos){
-        for (const auto& variable : variables) {
-            int vPos = copy.find("$"+variable.first);
+        for (variable* v : variables) {
+            std::string variableRef = "$" + v->name;
+            int vPos = copy.find(variableRef);
             while (vPos != std::string::npos)
             {
-                copy.erase(vPos, variable.first.length()+1);
-                copy.insert(vPos, variable.second);
-                vPos = copy.find("$"+variable.first);
+                copy.erase(vPos, v->name.length()+1);
+                copy.insert(vPos, v->getCurrValue());
+                vPos = copy.find("$"+v->name);
             }  
         }
     }
@@ -265,7 +288,8 @@ std::vector<std::string> sequencer::splitIntoMessages(std::string l){
     size_t end = line.find_first_of("|", start);
 
     while (end != std::string::npos){
-        messagesText.push_back(line.substr(start, end - start));
+        std::string m = line.substr(start, end-start);
+        if (!m.empty()) messagesText.push_back(m);
         start = end + 1;
         end = line.find_first_of("|",start);
     }

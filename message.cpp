@@ -1,5 +1,6 @@
 #include "message.h"
 #include "conv.h"
+#include <iostream>
 
 message::message(int ch, int n, int v){
     channel = ch;
@@ -18,8 +19,15 @@ message::message(std::vector<std::string> args){
         return;
     }
 
-    status = 0x90; // else, we technically have a note on
-    note = noteToInt(args[1]);
+    if (args[1].find("cc") != std::string::npos){ // cc message
+        status = 0xB0;
+        std::string ccStr = args[1];
+        ccStr.erase(0,2);
+        note = std::stoi(ccStr);
+    } else {
+        status = 0x90;
+        note = noteToInt(args[1]);   
+    }
 
     if (argc == 2){ // if there's no third argument, it's assumed that you want max velocity
         velocity = 127;

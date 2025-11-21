@@ -28,4 +28,8 @@ void sequencer::parseConfigLine(std::string line){
         sectionColor = stringToColor(value);
     else if (var == "variableColor")
         variableColor = stringToColor(value);
+    else if (var == "defaultBPM")
+        bpm = std::stoi(value);
+    else if (var == "defaultSubdivisions")
+        subdivisons = std::stoi(value);
 }
