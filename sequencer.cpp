@@ -15,6 +15,7 @@ sequencer::sequencer(script* scr){
     midiout->openPort(0);
 
     readConfig();
+    std::cout << messageBackground << std::endl;
 
     clock = 60000 / (bpm*subdivisons);
 
@@ -81,7 +82,7 @@ void sequencer::parseLine(int l){
 
     if (c == '-'){
         setVariable(line);
-        printLine(line, variableColor);
+        printLine(line, variableColor, variableBackground);
     }
     else { 
         line = replaceVariables(line);
@@ -89,20 +90,20 @@ void sequencer::parseLine(int l){
         c = line[0];
 
         if (c == '|'){ // if the line is a message
-            printLine(line, messageColor);
+            printLine(line, messageColor, messageBackground);
             parseMessage(line);
             wait();
         }     
         else if (c == '~'){ // function
-            printLine(line, functionColor);
+            printLine(line, functionColor, functionBackground);
             parseFunction(line);
         }
         else if (c == 'x'){ // empty line
-            printLine(line, messageColor);   
+            printLine(line, messageColor, messageBackground);   
             wait();
         }
-        else if (c == '@'){
-            printLine(line,sectionColor);
+        else if (c == '@'){ 
+            printLine(line,sectionColor, sectionBackground);
         }
     }
 }
@@ -142,6 +143,10 @@ void sequencer::parseMessage(std::string l){
     std::vector<message> messages;
     for (std::string mess : messagesText){
         std::vector<std::string> args = splitIntoArguments(mess);
+        if (args[0].find("ch") == std::string::npos && useDefChannel){ // if no channel specified in first arg
+            std::string chStr = "ch" + std::to_string(defaultChannel);
+            args.insert(args.begin(),chStr); // insert the default channel
+        }
         message m(args);
         messages.push_back(m);
     }
@@ -342,9 +347,16 @@ std::vector<std::string> sequencer::weightArguments(std::vector<std::string> arg
     return weightedArgs;
 }
 
-void sequencer::printLine(std::string l, color c){
+void sequencer::printLine(std::string l, color c, backgroundcolor bg){
     int colorInt = static_cast<int>(c);
-    std::string wrap = "\033[" + std::to_string(colorInt) + 'm' + l + "\033[0m";
+    std::string colorString = "\033[" + std::to_string(colorInt) + 'm';
+    std::string bgString;
+    if (bg != BG_NONE){
+        int bgInt = static_cast<int>(bg);
+        bgString = "\033[" + std::to_string(bgInt) + 'm';
+    }
+    std::string endFormat = "\033[0m";
+    std::string wrap = colorString + bgString + l + endFormat;
     std::string spaces;
     if (pCounter >= 0 && pCounter < 10){ // keeps all of the output in line
         spaces = "   ";

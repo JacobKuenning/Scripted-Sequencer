@@ -75,3 +75,24 @@ color stringToColor(std::string str){
     else 
         return WHITE;
 }
+
+backgroundcolor stringToBGColor(std::string str){
+    if (str == "RED")
+        return BG_RED;
+    else if (str == "BLUE")
+        return BG_BLUE;
+    else if (str == "CYAN")
+        return BG_CYAN;
+    else if (str == "MAGENTA")
+        return BG_MAGENTA;
+    else if (str == "YELLOW")
+        return BG_YELLOW;
+    else if (str == "BLACK")
+        return BG_BLACK;
+    else if (str == "GREEN")
+        return BG_GREEN;
+    else if (str == "WHITE")
+        return BG_WHITE;
+    else
+        return BG_NONE;
+}
