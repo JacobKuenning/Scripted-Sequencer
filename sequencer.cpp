@@ -3,6 +3,7 @@
 #include "message.h"
 #include "variable.h"
 #include "conv.h"
+#include "globals.h"
 #include "rtmidi/RtMidi.h"
 
 #include <chrono>
@@ -15,12 +16,11 @@
 #include <termios.h>
 #include <unistd.h>
 
-sequencer::sequencer(script* scr, bool msq, int start, std::function<void(int i)> cb){
+sequencer::sequencer(script* scr, bool msq, int start, std::function<void(int i)> cb, RtMidiOut* mout){
     branch = cb;
     mainSequencer = msq;
     pCounter = start;
-    midiout = new RtMidiOut();
-    midiout->openPort(0);
+    midiout = mout;
 
     //setRawMode(true);
     readConfig();
@@ -34,24 +34,30 @@ sequencer::sequencer(script* scr, bool msq, int start, std::function<void(int i)
 }
 
 void sequencer::run(){
-    while (running && pCounter < s->sLength){
-        parseLine(pCounter);
-        if (!incStack.empty()){
-            pCounter += incStack.back();
-            incStack.pop_back();
+      try {
+        while (running && pCounter < s->sLength){
+            parseLine(pCounter);
+            if (!incStack.empty()){
+                pCounter += incStack.back();
+                incStack.pop_back();
+            } else {
+                pCounter += increment;
+            }
         }
-        else{
-            pCounter += increment;
-        }   
+    } catch (const std::exception &e) {
+        std::cerr << "Exception in sequencer thread: " << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "Unknown exception in sequencer thread\n";
     }
-
-    while(true){
-        
-    }
+    running = false;
 }
 
 // deconstructor
 sequencer::~sequencer() {
+    for (variable* v: variables)
+        delete v;
+
+    debug("SEQ DECONSTRUCTOR");
     //setRawMode(false); // always restore terminal
 }
 
@@ -269,7 +275,7 @@ void sequencer::playSection(std::vector<std::string> args){
 }
 
 void sequencer::playSectionAsync(std::vector<std::string> args){
-    branch(s->sections[args[0]] - 1);
+    branch(s->sections[args[0]]);
 }
 
 void sequencer::changeIncrement(std::vector<std::string> args){
@@ -392,8 +398,11 @@ void sequencer::printLine(std::string l, color c, backgroundcolor bg){
         spaces = " ";
     }
 
-    std::cout << "[" << pCounter << "] " << spaces << wrap << std::endl;
-}
+    std::string output =  "[" + std::to_string(pCounter) + "] "  + spaces + wrap + "\n";
+    outputMx.lock();
+    std::cout << output;
+    outputMx.unlock();
+}   
 
 void sequencer::error(std::string message, int l){
     std::cout << "Line (" << l << "): " << message << std::endl;

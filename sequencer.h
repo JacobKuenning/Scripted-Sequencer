@@ -20,18 +20,18 @@ enum function : int{
 
 class sequencer{
     public:
-    sequencer(script* s, bool msq, int start, std::function<void(int i)> cb);
+    sequencer(script* s, bool msq, int start, std::function<void(int i)> cb, RtMidiOut* mout);
     void run();
     ~sequencer();
     std::function<void(int i)> branch;
     std::atomic<bool> running = true;
     bool mainSequencer = false;
-    std::thread inputThread;
     void play(message m);
-    void manageInput();
     void setRawMode(bool enable);
     script* s;
     RtMidiOut *midiout;
+    std::vector<std::string> outputVector;
+
 
     int pCounter = 0;
     int increment = 1;

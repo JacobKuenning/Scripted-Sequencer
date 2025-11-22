@@ -7,7 +7,7 @@ OBJ := $(SRC:%.cpp=$(OBJDIR)/%.o) # obj is all .o files, their names will be the
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	g++ -o $(TARGET) $(OBJ) -lrtmidi
+	g++ -g -fsanitize=address -o $(TARGET) $(OBJ) -lrtmidi
 
 $(OBJDIR)/%.o: %.cpp # % matches any file name, %< is the dependency, $@ is the target
 	g++ -c $< -o $@

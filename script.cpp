@@ -16,6 +16,10 @@ script::script(std::string fileName){
     return;
 }
 
+script::~script(){
+    std::cout << "SCRIPT DECONSTRUCTED" << std::endl;
+}
+
 void script::cleanScript(){
     // removing all comments
     for (int i = 0; i < lines.size(); i++){

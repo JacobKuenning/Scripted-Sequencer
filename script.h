@@ -9,6 +9,7 @@ public:
     int sLength = 0;
     std::map<std::string, int> sections;
     script(std::string fileName);
+    ~script();
     void cleanScript();
     void printLines();
     void findSections();
