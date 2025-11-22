@@ -44,6 +44,10 @@ void sequencer::run(){
             pCounter += increment;
         }   
     }
+
+    while(true){
+        
+    }
 }
 
 // deconstructor
