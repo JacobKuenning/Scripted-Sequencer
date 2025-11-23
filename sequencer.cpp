@@ -56,12 +56,10 @@ void sequencer::run(){
 sequencer::~sequencer() {
     for (variable* v: variables)
         delete v;
-
-    debug("SEQ DECONSTRUCTOR");
-    //setRawMode(false); // always restore terminal
 }
 
 void sequencer::play(message m){
+    midiMx.lock();
     std::vector<unsigned char> msg(3);
     if (m.status == 0x80){ // if we have a channel wide note off
         for (int i: playedNotes[m.channel]){ 
@@ -76,16 +74,21 @@ void sequencer::play(message m){
         msg[1] = m.note;
         msg[2] = m.velocity;
         midiout->sendMessage(&msg);
-        if (m.status == 0xB0) return; // if cc message, no need to go further
+        if (m.status == 0xB0) {
+            midiMx.unlock();    
+            return; // if cc message, no need to go further
+        }
 
         // check if note is already in the played notes vector, add it to vector if not
         for (int note : playedNotes[m.channel]){
             if (m.note == note){
+                midiMx.unlock();
                 return; 
             }
         }
         playedNotes[m.channel].push_back(m.note);
     } 
+    midiMx.unlock();
 }
 
 void sequencer::wait(){

@@ -15,6 +15,7 @@ RtMidiOut* midiout = new RtMidiOut;
 bool done = false;
 std::mutex outputMx;
 std::mutex vectorMx;
+std::mutex midiMx;
 
 // create new sequencer, start it at line i, it will run until it reaches an @ END
 void branch(int i){
@@ -23,7 +24,6 @@ void branch(int i){
     seqs.push_back(seq);
     std::thread seqThread;
     seqThread = std::thread(&sequencer::run, seq);
-    std::cout << seqThread.get_id() << std::endl;
     threads.push_back(std::move(seqThread));
     vectorMx.unlock();
     return;
@@ -36,7 +36,6 @@ int main(int argc, char** argv){
     seqs.push_back(seq);
     std::thread seqThread;
     seqThread = std::thread(&sequencer::run, seq);
-    std::cout << seqThread.get_id() << std::endl;
     threads.push_back(std::move(seqThread));
 
     // main thread periodically loops through, joins finished threads and frees memory
@@ -46,8 +45,8 @@ int main(int argc, char** argv){
             if (seqs[i]->running == false){
                 if (threads[i].joinable()){
                     threads[i].join();
-                    seqs.erase(seqs.begin()+i);
                     delete seqs[i];
+                    seqs.erase(seqs.begin()+i);
                     threads.erase(threads.begin() + i);
                 }
             }
@@ -55,10 +54,6 @@ int main(int argc, char** argv){
         vectorMx.unlock();
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
-
-    std::cout << "SEQ THREADS JOINED" << std::endl;
-
-    std::cout << "END OF MAIN" << std::endl;
 
     delete s;
 

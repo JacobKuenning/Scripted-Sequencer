@@ -17,7 +17,6 @@ script::script(std::string fileName){
 }
 
 script::~script(){
-    std::cout << "SCRIPT DECONSTRUCTED" << std::endl;
 }
 
 void script::cleanScript(){
