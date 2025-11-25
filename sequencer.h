@@ -50,7 +50,6 @@ class sequencer{
     void parseLine(int l);
     void parseMessage(std::string l);
     void parseFunction(std::string l);
-    std::string resolveSets(std::string l);
 
     void setVariable(std::string line);
     void setBPM(std::vector<std::string> args);
@@ -60,7 +59,7 @@ class sequencer{
 
     void skipLines(std::vector<std::string> args);
     void playSection(std::vector<std::string> args);
-    void playSectionAsync(std::vector<std::string> args);
+    void createSequencer(std::vector<std::string> args);
     void goToLine(std::vector<std::string> args);
     void finish(std::vector<std::string> args);
 
@@ -68,9 +67,6 @@ class sequencer{
     void reverse(std::vector<std::string> args);
 
     std::string replaceVariables(std::string line);
-    std::vector<std::string> splitIntoMessages(std::string l);
-    std::vector<std::string> splitIntoArguments(std::string m);
-    std::vector<std::string> weightArguments(std::vector<std::string> args);
 
     void error(std::string message, int l);
     void debug(std::string m);

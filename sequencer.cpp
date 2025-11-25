@@ -5,6 +5,7 @@
 #include "variable.h"
 #include "conv.h"
 #include "globals.h"
+#include "lineutils.h"
 #include "rtmidi/RtMidi.h"
 
 #include <chrono>
@@ -92,7 +93,6 @@ void sequencer::parseLine(int l){
     std::string line = s->getLine(l);
 
     if (line == "@END"){
-        if (!mainSequencer) running = false; // shut down if not the main sequencer
         if (!addrStack.empty()){
             pCounter = addrStack.back();
             addrStack.pop_back();
@@ -102,12 +102,12 @@ void sequencer::parseLine(int l){
     char c = line[0];
 
     if (c == '-'){
-        setVariable(line);
+        m->setVariable(line);
         m->printLine(pCounter, line, VARIABLE_LINE, ID);
     }
     else { 
         line = replaceVariables(line);
-        line = resolveSets(line);
+        line = resolveRandom(line);
         c = line[0];
 
         if (c == '|'){ // if the line is a message
@@ -127,35 +127,6 @@ void sequencer::parseLine(int l){
             m->printLine(pCounter, line, SECTION_LINE, ID);
         }
     }
-}
-
-//finds all lists, replaces it with a random choice of things within the set
-std::string sequencer::resolveSets(std::string line){
-    std::vector<std::string> sets;
-    size_t start = line.find_first_of("{");
-    size_t end = line.find_first_of("}");
-
-    if (start == std::string::npos || end == std::string::npos)
-        return line;
-
-    while (end != std::string::npos)
-    {
-        std::string set = line.substr(start, end-start+1);
-        sets.push_back(set);
-        start = end;
-        start = line.find_first_of("{",start);
-        end = line.find_first_of("}",start);
-    }
-    for (std::string s: sets){
-        std::string copy = s;
-        copy = copy.substr(1,copy.length()-2);
-        std::vector<std::string> args = splitIntoArguments(copy);
-        std::string choice = args[rand() % args.size()];
-        int fpos = line.find(s); 
-        line.erase(fpos,s.size()); // erase set from string 
-        line.insert(fpos,choice); // replace it with chosen argument
-    }
-    return line;
 }
 
 void sequencer::parseMessage(std::string l){
@@ -182,59 +153,34 @@ void sequencer::parseFunction(std::string l){
     int startParen = line.find_first_of("(");
     int endParen = line.find_first_of(")");
     std::string funcName = line.substr(0, startParen);
+    funcName = lowercase(funcName);
     std::string argText = line.substr(startParen+1, endParen-startParen-1);
     std::vector<std::string> args = splitIntoArguments(argText);
-    if (funcName == "SET_BPM"){
+    if (funcName == "set_bpm"){
         setBPM(args);
-    } else if (funcName == "SET_SUBDIVISIONS"){
+    } else if (funcName == "set_sudb"){
         setSubdivisions(args);
-    } else if (funcName == "SKIP"){
+    } else if (funcName == "skip"){
         skipLines(args);
-    } else if (funcName == "PLAY"){
+    } else if (funcName == "play"){
         playSection(args);
-    } else if (funcName == "PLAY_ASYNC"){
-        playSectionAsync(args);
-    } else if (funcName == "WAIT_MS"){
+    } else if (funcName == "new"){
+        createSequencer(args);
+    } else if (funcName == "wait_ms"){
         waitMilliseconds(args);
-    } else if (funcName == "SET_dINCREMENT"){
+    } else if (funcName == "set_inc"){
         changeIncrement(args);
-    } else if (funcName == "REVERSE"){
+    } else if (funcName == "reverse"){
         reverse(args);
-    } else if (funcName == "GO_TO"){
+    } else if (funcName == "go_to"){
         goToLine(args);
-    } else if (funcName == "FINISH"){
+    } else if (funcName == "finish"){
         finish(args);
+    } else if (funcName == "find_and_replace"){
+        m->varFindAndReplace(args);
     }
 }
 
-void sequencer::setVariable(std::string l){
-    std::string line = l;
-    line = line.substr(1, line.size()-1);
-    int spacePos = line.find_first_of("=");
-    std::string name = line.substr(0,spacePos);
-    std::string value = line.substr(spacePos + 1, line.size()- spacePos);
-    std::vector<std::string> values;
-
-    int bPos = value.find_first_of("[");
-    if (bPos == std::string::npos){ // if there's no brackets
-        values.push_back(value);
-    } else {
-        value = value.substr(1,value.size()-2);
-        values = splitIntoArguments(value);
-    }
-
-    // if variable already exists
-    variableMx.lock();
-    for (variable* v : m->variables){
-        if (v->name == name){
-            v->setValues(values);
-            variableMx.unlock();
-            return;
-        }
-    }
-    // otherwise, create new value
-    m->createVariable(name, values);
-}
 
 void sequencer::setBPM(std::vector<std::string> args){
     bpm = std::stoi(args[0]);
@@ -270,7 +216,7 @@ void sequencer::playSection(std::vector<std::string> args){
     pCounter = s->sections[args[0]] -1;
 }
 
-void sequencer::playSectionAsync(std::vector<std::string> args){
+void sequencer::createSequencer(std::vector<std::string> args){
     m->branch(s->sections[args[0]]);
 }
 
@@ -313,68 +259,6 @@ std::string sequencer::replaceVariables(std::string line){
     }
     variableMx.unlock();
     return copy;
-}
-
-std::vector<std::string> sequencer::splitIntoMessages(std::string l){
-    std::string line = l;
-    std::vector<std::string> messagesText;
-    
-    size_t start = 1;
-    size_t end = line.find_first_of("|", start);
-
-    while (end != std::string::npos){
-        std::string m = line.substr(start, end-start);
-        if (!m.empty()) messagesText.push_back(m);
-        start = end + 1;
-        end = line.find_first_of("|",start);
-    }
-    
-    return messagesText;
-}
-
-std::vector<std::string> sequencer::splitIntoArguments(std::string m){
-    std::vector<std::string> argumentsText;
-
-    size_t start = 0;
-    size_t end = 0;
-
-    while (end != std::string::npos){
-        if (m[start] == ',') // for when it just added a quoted arg, the next char will be a comma, so skip it
-            start += 1;
-        if (start >= m.size()) // when last arg is quoted, it will start you at the end of the string, adding an empty arg
-            break;
-        if (m[start] == '\"'){
-            end = m.find_first_of("\"", start+1);
-            argumentsText.push_back(m.substr(start+1, end - start - 1));
-        }
-        else {
-            end = m.find_first_of(",", start);
-            argumentsText.push_back(m.substr(start, end - start));
-        }
-        start = end + 1;
-    }
-
-    return weightArguments(argumentsText);
-}
-
-std::vector<std::string> sequencer::weightArguments(std::vector<std::string> args){
-    std::vector<std::string> weightedArgs;
-    for (std::string a : args){
-        size_t wPos = a.find_first_of(":");
-        if (wPos == std::string::npos){
-            weightedArgs.push_back(a);
-            continue;
-        }   
-        
-        std::string arg = a.substr(0,wPos);
-        int weight = std::stoi(a.substr(wPos+1,a.size()-wPos-1));
-
-        for (int i = 0; i < weight; i++)
-        {
-            weightedArgs.push_back(arg);
-        }
-    }
-    return weightedArgs;
 }
 
 void sequencer::error(std::string message, int l){

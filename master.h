@@ -55,5 +55,6 @@ public:
     void setRawMode(bool enable);
     void killAllMidi();
     void printLine(int pCounter, std::string l, lineType ltype, int seqID);
-    void createVariable(std::string n, std::vector<std::string> v);
+    void setVariable(std::string l);
+    void varFindAndReplace(std::vector<std::string> args);
 };

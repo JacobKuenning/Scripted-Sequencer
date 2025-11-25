@@ -3,6 +3,7 @@
 #include "script.h"
 #include "sequencer.h"
 #include "message.h"
+#include "lineutils.h"
 #include "conv.h"
 #include "rtmidi/RtMidi.h"
 #include <thread>
@@ -15,6 +16,77 @@
 #include <unistd.h>
 #include <fstream>
 #include <algorithm>
+
+master::master(script* s){
+    scr = s;
+    midiout = new RtMidiOut;
+    midiout->openPort(0);
+    readConfig();
+    setRawMode(true);
+
+    std::thread inputThread = std::thread(&master::input, this);
+
+    sequencer* seq = new sequencer(this,s, 0, midiout, getNextID());
+    seqs.push_back(seq);
+    std::thread seqThread;
+    seqThread = std::thread(&sequencer::run, seq);
+    threads.push_back(std::move(seqThread));
+
+    // main thread periodically loops through, joins finished threads and frees memory
+    while(!threads.empty()){
+        vectorMx.lock();
+        for (int i= 0; i < seqs.size(); i++){
+            if (seqs[i]->running == false){
+                if (threads[i].joinable()){
+                    threads[i].join();
+                    delete seqs[i];
+                    seqs.erase(seqs.begin()+i);
+                    threads.erase(threads.begin() + i);
+                }
+            }
+        }
+        vectorMx.unlock();
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
+
+    done = true;
+    inputThread.join();
+    if (killMidiOnQuit) killAllMidi();
+
+    delete midiout;
+
+    for (variable* v : variables){
+        delete v;
+    }
+    setRawMode(false);
+    return;
+}
+
+void master::input(){
+    while(!done){
+        int c = getchar();
+        if (c=='q'){
+            vectorMx.lock();
+            for (sequencer* n : seqs){
+                n->running = false;
+            }
+            done = true;
+            vectorMx.unlock();
+        }
+    }
+}
+
+// create new sequencer, start it at line i
+void master::branch(int i){
+    sequencer* seq = new sequencer(this, scr, i, midiout, getNextID());
+    vectorMx.lock();
+    seqs.push_back(seq);
+    std::thread seqThread;
+    seqThread = std::thread(&sequencer::run, seq);
+    threads.push_back(std::move(seqThread));
+    vectorMx.unlock();
+    return;
+}
 
 void master::readConfig(){
     std::ifstream cFile("config.txt");
@@ -78,7 +150,6 @@ void master::parseConfigLine(std::string line){
     }
 }
 
-
 void master::printLine(int pCounter, std::string l, lineType ltype, int seqID){
 
     color fg; backgroundcolor bg;
@@ -123,32 +194,6 @@ void master::printLine(int pCounter, std::string l, lineType ltype, int seqID){
     std::cout << threadS + output;
     outputMx.unlock();
 }   
-
-void master::input(){
-    while(!done){
-        int c = getchar();
-        if (c=='q'){
-            vectorMx.lock();
-            for (sequencer* n : seqs){
-                n->running = false;
-            }
-            done = true;
-            vectorMx.unlock();
-        }
-    }
-}
-
-// create new sequencer, start it at line i, it will run until it reaches an @ END
-void master::branch(int i){
-    sequencer* seq = new sequencer(this, scr, i, midiout, getNextID());
-    vectorMx.lock();
-    seqs.push_back(seq);
-    std::thread seqThread;
-    seqThread = std::thread(&sequencer::run, seq);
-    threads.push_back(std::move(seqThread));
-    vectorMx.unlock();
-    return;
-}
 
 void master::setRawMode(bool enable) { 
     static termios oldt; 
@@ -198,52 +243,51 @@ int master::getNextID(){
     return next;
 }
 
-master::master(script* s){
-    scr = s;
-    midiout = new RtMidiOut;
-    midiout->openPort(0);
-    readConfig();
-    setRawMode(true);
+void master::setVariable(std::string l){
+    std::string line = l;
+    line = line.substr(1, line.size()-1);
+    int spacePos = line.find_first_of("=");
+    std::string name = line.substr(0,spacePos);
+    std::string value = line.substr(spacePos + 1, line.size()- spacePos);
+    std::vector<std::string> values;
 
-    std::thread inputThread = std::thread(&master::input, this);
-
-    sequencer* seq = new sequencer(this,s, 0, midiout, getNextID());
-    seqs.push_back(seq);
-    std::thread seqThread;
-    seqThread = std::thread(&sequencer::run, seq);
-    threads.push_back(std::move(seqThread));
-
-    // main thread periodically loops through, joins finished threads and frees memory
-    while(!threads.empty()){
-        vectorMx.lock();
-        for (int i= 0; i < seqs.size(); i++){
-            if (seqs[i]->running == false){
-                if (threads[i].joinable()){
-                    threads[i].join();
-                    delete seqs[i];
-                    seqs.erase(seqs.begin()+i);
-                    threads.erase(threads.begin() + i);
-                }
-            }
-        }
-        vectorMx.unlock();
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    int bPos = value.find_first_of("[");
+    if (bPos == std::string::npos){ // if there's no brackets
+        values.push_back(value);
+    } else {
+        value = value.substr(1,value.size()-2);
+        values = splitIntoArguments(value);
     }
 
-    inputThread.join();
-    if (killMidiOnQuit) killAllMidi();
-
-    delete midiout;
-
+    // if variable already exists
+    variableMx.lock();
     for (variable* v : variables){
-        delete v;
+        if (v->name == name){
+            v->setValues(values);
+            variableMx.unlock();
+            return;
+        }
     }
-    setRawMode(false);
-    return;
+    // otherwise, create new value
+    variable* var = new variable(name,values);
+    variables.push_back(var);
+    variableMx.unlock();
 }
 
-void master::createVariable(std::string n, std::vector<std::string> v){
-    variable* var = new variable(n,v);
-    variables.push_back(var);
+void master::varFindAndReplace(std::vector<std::string> args){
+    std::string f = args[1];
+    std::string r = args[2];
+    std::string exc = args[3];
+
+    variableMx.lock();
+    for (variable* v : variables){
+        if (v->name == args[0]){
+            for (int i = 0; i < v->values.size(); i++){
+                std::string oldValue = v->values[i];
+                std::string newValue = findAndReplace(oldValue,f,r,exc);
+                v->values[i] = newValue;
+            }
+        }
+    }
     variableMx.unlock();
 }
