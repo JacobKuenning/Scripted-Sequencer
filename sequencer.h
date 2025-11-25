@@ -21,7 +21,7 @@ enum function : int{
 
 class sequencer{
     public:
-    sequencer(master* m, script* s, int start, RtMidiOut* mout);
+    sequencer(master* m, script* s, int start, RtMidiOut* mout, int seqID);
     void run();
     ~sequencer();
     std::atomic<bool> running = true;
@@ -30,6 +30,7 @@ class sequencer{
     void setRawMode(bool enable);
     script* s;
     master* m;
+    int ID = 0;
     RtMidiOut *midiout;
     std::vector<std::string> outputVector;
 

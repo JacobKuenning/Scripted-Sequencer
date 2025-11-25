@@ -17,11 +17,12 @@
 #include <termios.h>
 #include <unistd.h>
 
-sequencer::sequencer(master* mas, script* scr, int start, RtMidiOut* mout){
+sequencer::sequencer(master* mas, script* scr, int start, RtMidiOut* mout, int seqID){
     m = mas;
     pCounter = start;
     midiout = mout;
 
+    ID = seqID;
     bpm = m->defBPM;
     subdivisons = m->defSubdivisions;
     useDefChannel = m->useDefChannel;
@@ -104,7 +105,7 @@ void sequencer::parseLine(int l){
 
     if (c == '-'){
         setVariable(line);
-        m->printLine(pCounter, line, VARIABLE_LINE);
+        m->printLine(pCounter, line, VARIABLE_LINE, ID);
     }
     else { 
         line = replaceVariables(line);
@@ -112,20 +113,20 @@ void sequencer::parseLine(int l){
         c = line[0];
 
         if (c == '|'){ // if the line is a message
-            m->printLine(pCounter, line, MESSAGE_LINE);
+            m->printLine(pCounter, line, MESSAGE_LINE, ID);
             parseMessage(line);
             wait();
         }     
         else if (c == '~'){ // function
-            m->printLine(pCounter, line, FUNCTION_LINE);
+            m->printLine(pCounter, line, FUNCTION_LINE, ID);
             parseFunction(line);
         }
         else if (c == 'x'){ // empty line
-            m->printLine(pCounter, line, MESSAGE_LINE);   
+            m->printLine(pCounter, line, MESSAGE_LINE, ID);   
             wait();
         }
         else if (c == '@'){ 
-            m->printLine(pCounter, line, SECTION_LINE);
+            m->printLine(pCounter, line, SECTION_LINE, ID);
         }
     }
 }

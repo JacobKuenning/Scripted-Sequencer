@@ -14,6 +14,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <fstream>
+#include <algorithm>
 
 void master::readConfig(){
     std::ifstream cFile("config.txt");
@@ -78,7 +79,7 @@ void master::parseConfigLine(std::string line){
 }
 
 
-void master::printLine(int pCounter, std::string l, lineType ltype){
+void master::printLine(int pCounter, std::string l, lineType ltype, int seqID){
 
     color fg; backgroundcolor bg;
     switch(ltype){
@@ -114,9 +115,11 @@ void master::printLine(int pCounter, std::string l, lineType ltype){
         spaces = " ";
     }
 
-    std::string output =  "[" + std::to_string(pCounter) + "] "  + spaces + wrap + "\n";
+    std::string output = "[" + std::to_string(pCounter) + "] "  + spaces + wrap + "\n";
     outputMx.lock();
-    std::cout << output;
+    std::string threadC = "\033[" + std::to_string(threadColors[seqID-1 % 6]) + 'm';
+    std::string threadS = threadC + '[' + std::to_string(seqID) + ']' + endFormat;
+    std::cout << threadS + output;
     outputMx.unlock();
 }   
 
@@ -136,16 +139,13 @@ void master::input(){
 
 // create new sequencer, start it at line i, it will run until it reaches an @ END
 void master::branch(int i){
-    std::cout << "BRANCHED" << std::endl;
-    std::cout << i << std::endl;
-    sequencer* seq = new sequencer(this, scr, i, midiout);
+    sequencer* seq = new sequencer(this, scr, i, midiout, getNextID());
     vectorMx.lock();
     seqs.push_back(seq);
     std::thread seqThread;
     seqThread = std::thread(&sequencer::run, seq);
     threads.push_back(std::move(seqThread));
     vectorMx.unlock();
-    std::cout << "END OF BRANCH FUNCTION" << std::endl;
     return;
 }
 
@@ -177,6 +177,26 @@ void master::killAllMidi(){
     }
 }
 
+// find lowest possible unique ID
+int master::getNextID(){
+    std::vector<int> IDs = {0};
+    for (sequencer* seq : seqs){
+        IDs.push_back(seq->ID);
+    }
+
+    std::sort(IDs.begin(), IDs.end());
+    std::vector<int> possibleIDs;
+
+    int next = 0;
+    for (int id : IDs) {
+        if (id == next) // move until you've found a gap
+            next++;
+        else if (id > next) // gap found
+            break;
+    }
+    return next;
+}
+
 master::master(script* s){
     scr = s;
     midiout = new RtMidiOut;
@@ -186,7 +206,7 @@ master::master(script* s){
 
     std::thread inputThread = std::thread(&master::input, this);
 
-    sequencer* seq = new sequencer(this,s, 0, midiout);
+    sequencer* seq = new sequencer(this,s, 0, midiout, getNextID());
     seqs.push_back(seq);
     std::thread seqThread;
     seqThread = std::thread(&sequencer::run, seq);

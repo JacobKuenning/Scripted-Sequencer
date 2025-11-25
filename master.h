@@ -42,13 +42,16 @@ public:
     backgroundcolor sectionBackground = BG_NONE;
     backgroundcolor variableBackground = BG_NONE;
 
+    color threadColors[6] = {RED,YELLOW,GREEN,BLUE,MAGENTA,CYAN};
+
     master(script* s);
+    int getNextID();
     void readConfig();
     void parseConfigLine(std::string file);
     void input();
     void branch(int i);
     void setRawMode(bool enable);
     void killAllMidi();
-    void printLine(int pCounter, std::string l, lineType ltype);
+    void printLine(int pCounter, std::string l, lineType ltype, int seqID);
 
 };
