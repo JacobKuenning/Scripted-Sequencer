@@ -42,7 +42,6 @@ class sequencer{
     int subdivisons = 1;
     int bpm = 100;
     std::vector<int> addrStack;
-    std::vector<variable*> variables;
 
     bool useDefChannel = false;
     int defaultChannel = 1;

@@ -48,8 +48,6 @@ void sequencer::run(){
 
 // deconstructor
 sequencer::~sequencer() {
-    for (variable* v: variables)
-        delete v;
 }
 
 void sequencer::play(message m){
@@ -226,15 +224,16 @@ void sequencer::setVariable(std::string l){
     }
 
     // if variable already exists
-    for (variable* v : variables){
+    variableMx.lock();
+    for (variable* v : m->variables){
         if (v->name == name){
             v->setValues(values);
+            variableMx.unlock();
             return;
         }
     }
     // otherwise, create new value
-    variable* v = new variable(name,values);
-    variables.push_back(v);
+    m->createVariable(name, values);
 }
 
 void sequencer::setBPM(std::vector<std::string> args){
@@ -299,8 +298,9 @@ std::string sequencer::replaceVariables(std::string line){
 
     std::string copy = line;
 
+    variableMx.lock();
     while (copy.find_first_of("$") != std::string::npos){
-        for (variable* v : variables) {
+        for (variable* v : m->variables) {
             std::string variableRef = "$" + v->name;
             int vPos = copy.find(variableRef);
             while (vPos != std::string::npos)
@@ -311,6 +311,7 @@ std::string sequencer::replaceVariables(std::string line){
             }  
         }
     }
+    variableMx.unlock();
     return copy;
 }
 

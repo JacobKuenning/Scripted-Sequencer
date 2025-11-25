@@ -1,12 +1,12 @@
 #pragma once
-
+#include "rtmidi/RtMidi.h"
+#include "globals.h"
+#include "color.h"
+#include "variable.h"
 #include <vector>
 #include <string>
 #include <thread>
 #include <mutex>
-#include <rtmidi/RtMidi.h>
-#include "globals.h"
-#include "color.h"
 
 class sequencer;
 class script;
@@ -24,6 +24,8 @@ public:
     std::vector<sequencer*> seqs;
     script* scr;
     RtMidiOut* midiout;
+    std::vector<variable*> variables;
+
     bool done = false;
 
     int defBPM = 100;
@@ -53,5 +55,5 @@ public:
     void setRawMode(bool enable);
     void killAllMidi();
     void printLine(int pCounter, std::string l, lineType ltype, int seqID);
-
+    void createVariable(std::string n, std::vector<std::string> v);
 };

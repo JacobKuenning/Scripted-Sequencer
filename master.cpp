@@ -116,9 +116,10 @@ void master::printLine(int pCounter, std::string l, lineType ltype, int seqID){
     }
 
     std::string output = "[" + std::to_string(pCounter) + "] "  + spaces + wrap + "\n";
-    outputMx.lock();
     std::string threadC = "\033[" + std::to_string(threadColors[seqID-1 % 6]) + 'm';
     std::string threadS = threadC + '[' + std::to_string(seqID) + ']' + endFormat;
+    
+    outputMx.lock();
     std::cout << threadS + output;
     outputMx.unlock();
 }   
@@ -233,6 +234,16 @@ master::master(script* s){
     if (killMidiOnQuit) killAllMidi();
 
     delete midiout;
+
+    for (variable* v : variables){
+        delete v;
+    }
     setRawMode(false);
     return;
+}
+
+void master::createVariable(std::string n, std::vector<std::string> v){
+    variable* var = new variable(n,v);
+    variables.push_back(var);
+    variableMx.unlock();
 }
