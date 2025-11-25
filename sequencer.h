@@ -13,6 +13,7 @@
 class script;
 class message;
 class variable;
+class master;
 
 enum function : int{
     VARIABLE
@@ -20,15 +21,15 @@ enum function : int{
 
 class sequencer{
     public:
-    sequencer(script* s, bool msq, int start, std::function<void(int i)> cb, RtMidiOut* mout);
+    sequencer(master* m, script* s, int start, RtMidiOut* mout);
     void run();
     ~sequencer();
-    std::function<void(int i)> branch;
     std::atomic<bool> running = true;
     bool mainSequencer = false;
     void play(message m);
     void setRawMode(bool enable);
     script* s;
+    master* m;
     RtMidiOut *midiout;
     std::vector<std::string> outputVector;
 
@@ -42,21 +43,9 @@ class sequencer{
     std::vector<int> addrStack;
     std::vector<variable*> variables;
 
-    void readConfig();
-    void parseConfigLine(std::string);
     bool useDefChannel = false;
     int defaultChannel = 1;
     bool killMidiOnQuit = true;
-
-    color functionColor = MAGENTA;
-    color messageColor = BLUE;
-    color sectionColor = CYAN;
-    color variableColor = GREEN;
-
-    backgroundcolor functionBackground = BG_NONE;
-    backgroundcolor messageBackground = BG_NONE;
-    backgroundcolor sectionBackground = BG_NONE;
-    backgroundcolor variableBackground = BG_NONE;
 
     void parseLine(int l);
     void parseMessage(std::string l);
@@ -83,8 +72,6 @@ class sequencer{
     std::vector<std::string> splitIntoArguments(std::string m);
     std::vector<std::string> weightArguments(std::vector<std::string> args);
 
-    void killAllMidi();
-    void printLine(std::string l, color c, backgroundcolor bg);
     void error(std::string message, int l);
     void debug(std::string m);
     std::vector<int> playedNotes[16];

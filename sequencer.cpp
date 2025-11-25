@@ -1,3 +1,4 @@
+#include "master.h"
 #include "sequencer.h"
 #include "script.h"
 #include "message.h"
@@ -16,38 +17,30 @@
 #include <termios.h>
 #include <unistd.h>
 
-sequencer::sequencer(script* scr, bool msq, int start, std::function<void(int i)> cb, RtMidiOut* mout){
-    branch = cb;
-    mainSequencer = msq;
+sequencer::sequencer(master* mas, script* scr, int start, RtMidiOut* mout){
+    m = mas;
     pCounter = start;
     midiout = mout;
 
-    //setRawMode(true);
-    readConfig();
+    bpm = m->defBPM;
+    subdivisons = m->defSubdivisions;
+    useDefChannel = m->useDefChannel;
+    defaultChannel = m->defChannel;
 
     clock = 60000 / (bpm*subdivisons);
     s = scr;
     srand(time(0));
-
-    // start input thread after everything is initialized
-    // inputThread = std::thread(&sequencer::manageInput, this);
 }
 
 void sequencer::run(){
-      try {
-        while (running && pCounter < s->sLength){
-            parseLine(pCounter);
-            if (!incStack.empty()){
-                pCounter += incStack.back();
-                incStack.pop_back();
-            } else {
-                pCounter += increment;
-            }
+    while (running && pCounter < s->sLength){
+        parseLine(pCounter);
+        if (!incStack.empty()){
+            pCounter += incStack.back();
+            incStack.pop_back();
+        } else {
+            pCounter += increment;
         }
-    } catch (const std::exception &e) {
-        std::cerr << "Exception in sequencer thread: " << e.what() << std::endl;
-    } catch (...) {
-        std::cerr << "Unknown exception in sequencer thread\n";
     }
     running = false;
 }
@@ -111,7 +104,7 @@ void sequencer::parseLine(int l){
 
     if (c == '-'){
         setVariable(line);
-        printLine(line, variableColor, variableBackground);
+        m->printLine(pCounter, line, VARIABLE_LINE);
     }
     else { 
         line = replaceVariables(line);
@@ -119,20 +112,20 @@ void sequencer::parseLine(int l){
         c = line[0];
 
         if (c == '|'){ // if the line is a message
-            printLine(line, messageColor, messageBackground);
+            m->printLine(pCounter, line, MESSAGE_LINE);
             parseMessage(line);
             wait();
         }     
         else if (c == '~'){ // function
-            printLine(line, functionColor, functionBackground);
+            m->printLine(pCounter, line, FUNCTION_LINE);
             parseFunction(line);
         }
         else if (c == 'x'){ // empty line
-            printLine(line, messageColor, messageBackground);   
+            m->printLine(pCounter, line, MESSAGE_LINE);   
             wait();
         }
         else if (c == '@'){ 
-            printLine(line,sectionColor, sectionBackground);
+            m->printLine(pCounter, line, SECTION_LINE);
         }
     }
 }
@@ -278,7 +271,7 @@ void sequencer::playSection(std::vector<std::string> args){
 }
 
 void sequencer::playSectionAsync(std::vector<std::string> args){
-    branch(s->sections[args[0]]);
+    m->branch(s->sections[args[0]]);
 }
 
 void sequencer::changeIncrement(std::vector<std::string> args){
@@ -382,31 +375,6 @@ std::vector<std::string> sequencer::weightArguments(std::vector<std::string> arg
     return weightedArgs;
 }
 
-void sequencer::printLine(std::string l, color c, backgroundcolor bg){
-    int colorInt = static_cast<int>(c);
-    std::string colorString = "\033[" + std::to_string(colorInt) + 'm';
-    std::string bgString;
-    if (bg != BG_NONE){
-        int bgInt = static_cast<int>(bg);
-        bgString = "\033[" + std::to_string(bgInt) + 'm';
-    }
-    std::string endFormat = "\033[0m";
-    std::string wrap = colorString + bgString + l + endFormat;
-    std::string spaces;
-    if (pCounter >= 0 && pCounter < 10){ // keeps all of the output in line
-        spaces = "   ";
-    } else if (pCounter >= 10 && pCounter < 100){
-        spaces = "  ";
-    } else {
-        spaces = " ";
-    }
-
-    std::string output =  "[" + std::to_string(pCounter) + "] "  + spaces + wrap + "\n";
-    outputMx.lock();
-    std::cout << output;
-    outputMx.unlock();
-}   
-
 void sequencer::error(std::string message, int l){
     std::cout << "Line (" << l << "): " << message << std::endl;
     std::cout << "--- " << s->getLine(l) << " ---" << std::endl;
@@ -428,21 +396,5 @@ void sequencer::setRawMode(bool enable) {
         tcsetattr(STDIN_FILENO, TCSANOW, &newt);
     } else {
         tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-    }
-}
-
-void sequencer::killAllMidi(){
-    std::vector<message> offMessages;
-
-    for (int i = 0; i < 16; i++){
-        for (int n = 0; n < 108; n++)
-        {
-            std::vector<unsigned char> msg(3);
-            msg[0] = i | 0x80;
-            msg[1] = n;
-            msg[2] = 0;
-            midiout->sendMessage(&msg);
-        }
-        
     }
 }
