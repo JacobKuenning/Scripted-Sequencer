@@ -28,7 +28,7 @@ public:
 
     bool done = false;
 
-
+    std::string defStartingSeqName;
     bool useSeqNameForOutput = false;
     int defBPM = 100;
     int defSubdivisions = 1;

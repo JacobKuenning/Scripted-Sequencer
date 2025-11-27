@@ -27,6 +27,7 @@ master::master(script* s){
     std::thread inputThread = std::thread(&master::input, this);
 
     sequencer* seq = new sequencer(this,s, 0, midiout, getNextID());
+    seq->name = defStartingSeqName;
     seqs.push_back(seq);
     std::thread seqThread;
     seqThread = std::thread(&sequencer::run, seq);
@@ -145,6 +146,9 @@ void master::parseConfigLine(std::string line){
     else if (var == "variableBackground")
         variableBackground = stringToBGColor(value);
 
+    else if (var == "startingSequencerName"){
+        defStartingSeqName = value;
+    }
     else if (var == "useSequencerNameInOutput"){
         useSeqNameForOutput = textToBool(value);
     }
