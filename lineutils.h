@@ -8,3 +8,4 @@ std::string resolveRandom(std::string line);
 std::string lowercase(std::string str);
 std::string findAndReplace(std::string str, std::string f, std::string r, std::string exc);
 bool isInt(std::string str);
+bool textToBool(std::string str);

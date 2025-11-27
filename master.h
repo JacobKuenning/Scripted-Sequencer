@@ -28,6 +28,8 @@ public:
 
     bool done = false;
 
+
+    bool useSeqNameForOutput = false;
     int defBPM = 100;
     int defSubdivisions = 1;
     bool killMidiOnQuit = true;
@@ -51,10 +53,11 @@ public:
     void readConfig();
     void parseConfigLine(std::string file);
     void input();
-    void branch(int i);
+    void branch(std::string n, int i);
+    void stopSequencer(std::vector<std::string> args);
     void setRawMode(bool enable);
     void killAllMidi();
-    void printLine(int pCounter, std::string l, lineType ltype, int seqID);
+    void printLine(int pCounter, std::string l, lineType ltype, int seqID, std::string seqName);
 
     // in vfunc
     void setVariable(std::string l);

@@ -128,3 +128,10 @@ std::string findAndReplace(std::string str, std::string f, std::string r, std::s
 bool isInt(std::string str){
     return std::all_of(str.begin(), str.end(), ::isdigit);
 }
+
+bool textToBool(std::string str){
+    if (str == "TRUE"){
+        return true;
+    }
+    return false;
+}

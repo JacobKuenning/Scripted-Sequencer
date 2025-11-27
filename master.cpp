@@ -77,8 +77,9 @@ void master::input(){
 }
 
 // create new sequencer, start it at line i
-void master::branch(int i){
+void master::branch(std::string n, int i){
     sequencer* seq = new sequencer(this, scr, i, midiout, getNextID());
+    seq->name = n;
     vectorMx.lock();
     seqs.push_back(seq);
     std::thread seqThread;
@@ -86,6 +87,20 @@ void master::branch(int i){
     threads.push_back(std::move(seqThread));
     vectorMx.unlock();
     return;
+}
+
+void master::stopSequencer(std::vector<std::string> args){
+    vectorMx.lock();
+
+    std::string n = args[0];
+
+    for (sequencer* seq : seqs){
+        if (seq->name == n){
+            seq->running = false;
+        }
+    }
+
+    vectorMx.unlock();
 }
 
 void master::readConfig(){
@@ -130,6 +145,10 @@ void master::parseConfigLine(std::string line){
     else if (var == "variableBackground")
         variableBackground = stringToBGColor(value);
 
+    else if (var == "useSequencerNameInOutput"){
+        useSeqNameForOutput = textToBool(value);
+    }
+
     // sequencer settings
     else if (var == "defaultBPM")
         defBPM = std::stoi(value);
@@ -143,14 +162,11 @@ void master::parseConfigLine(std::string line){
         else
             useDefChannel = false;
     } else if (var == "killMidiOnQuit"){
-        if (value == "TRUE")
-            killMidiOnQuit = true;
-        else
-            killMidiOnQuit = false;
+        killMidiOnQuit = textToBool(value);
     }
 }
 
-void master::printLine(int pCounter, std::string l, lineType ltype, int seqID){
+void master::printLine(int pCounter, std::string l, lineType ltype, int seqID, std::string seqName){
 
     color fg; backgroundcolor bg;
     switch(ltype){
@@ -188,7 +204,10 @@ void master::printLine(int pCounter, std::string l, lineType ltype, int seqID){
 
     std::string output = "[" + std::to_string(pCounter) + "] "  + spaces + wrap + "\n";
     std::string threadC = "\033[" + std::to_string(threadColors[seqID-1 % 6]) + 'm';
-    std::string threadS = threadC + '[' + std::to_string(seqID) + ']' + endFormat;
+    std::string bracketText;
+    if (useSeqNameForOutput) bracketText = seqName;
+    else bracketText = std::to_string(seqID);
+    std::string threadS = threadC + '[' + bracketText + ']' + endFormat;
     
     outputMx.lock();
     std::cout << threadS + output;

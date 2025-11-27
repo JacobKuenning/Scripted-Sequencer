@@ -31,6 +31,7 @@ class sequencer{
     script* s;
     master* m;
     int ID = 0;
+    std::string name;
     RtMidiOut *midiout;
     std::vector<std::string> outputVector;
 

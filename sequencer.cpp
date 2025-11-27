@@ -103,7 +103,7 @@ void sequencer::parseLine(int l){
 
     if (c == '-'){
         m->setVariable(line);
-        m->printLine(pCounter, line, VARIABLE_LINE, ID);
+        m->printLine(pCounter, line, VARIABLE_LINE, ID, name);
     }
     else { 
         line = replaceVariables(line);
@@ -111,20 +111,20 @@ void sequencer::parseLine(int l){
         c = line[0];
 
         if (c == '|'){ // if the line is a message
-            m->printLine(pCounter, line, MESSAGE_LINE, ID);
+            m->printLine(pCounter, line, MESSAGE_LINE, ID, name);
             parseMessage(line);
             wait();
         }     
         else if (c == '#'){ // function
-            m->printLine(pCounter, line, FUNCTION_LINE, ID);
+            m->printLine(pCounter, line, FUNCTION_LINE, ID, name);
             parseFunction(line);
         }
         else if (c == 'x'){ // empty line
-            m->printLine(pCounter, line, MESSAGE_LINE, ID);   
+            m->printLine(pCounter, line, MESSAGE_LINE, ID, name);   
             wait();
         }
         else if (c == '@'){ 
-            m->printLine(pCounter, line, SECTION_LINE, ID);
+            m->printLine(pCounter, line, SECTION_LINE, ID, name);
         }
     }
 }
@@ -164,8 +164,10 @@ void sequencer::parseFunction(std::string l){
         skipLines(args);
     } else if (funcName == "play"){
         playSection(args);
-    } else if (funcName == "new"){
+    } else if (funcName == "new_seq"){
         createSequencer(args);
+    } else if (funcName == "end_seq"){
+        m->stopSequencer(args);
     } else if (funcName == "wait_ms"){
         waitMilliseconds(args);
     } else if (funcName == "set_inc"){
@@ -219,7 +221,11 @@ void sequencer::playSection(std::vector<std::string> args){
 }
 
 void sequencer::createSequencer(std::vector<std::string> args){
-    m->branch(s->strToLineNumber(args[0]) +1);
+    int argc = args.size();
+    if (argc == 1)
+        m->branch("", s->strToLineNumber(args[0]) +1);
+    else if (argc == 2)
+        m->branch(args[0], s->strToLineNumber(args[1]) +1);
 }
 
 void sequencer::changeIncrement(std::vector<std::string> args){
