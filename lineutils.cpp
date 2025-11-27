@@ -124,3 +124,7 @@ std::string findAndReplace(std::string str, std::string f, std::string r, std::s
 
     return str;
 }
+
+bool isInt(std::string str){
+    return std::all_of(str.begin(), str.end(), ::isdigit);
+}

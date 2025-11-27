@@ -80,6 +80,13 @@ void script::findAndReplace(std::string f, std::string r){
     }
 }
 
+bool script::isValidSection(std::string s){
+    if (sections.find(s) != sections.end())
+        return true;
+    else return false;
+}
+
+
 void script::printLines(){
     for (std::string l : lines){
         std::cout << l << std::endl;

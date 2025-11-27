@@ -115,7 +115,7 @@ void sequencer::parseLine(int l){
             parseMessage(line);
             wait();
         }     
-        else if (c == '~'){ // function
+        else if (c == '#'){ // function
             m->printLine(pCounter, line, FUNCTION_LINE, ID);
             parseFunction(line);
         }
@@ -158,7 +158,7 @@ void sequencer::parseFunction(std::string l){
     std::vector<std::string> args = splitIntoArguments(argText);
     if (funcName == "set_bpm"){
         setBPM(args);
-    } else if (funcName == "set_sudb"){
+    } else if (funcName == "set_subd"){
         setSubdivisions(args);
     } else if (funcName == "skip"){
         skipLines(args);
@@ -176,11 +176,14 @@ void sequencer::parseFunction(std::string l){
         goToLine(args);
     } else if (funcName == "finish"){
         finish(args);
-    } else if (funcName == "find_and_replace"){
+    } else if (funcName == "v_find_n_rep"){
         m->varFindAndReplace(args);
+    } else if (funcName == "v_set_inc"){
+        m->varSetIncrement(args);
+    } else if (funcName == "v_set_counter"){
+        m->varSetCounter(args);
     }
 }
-
 
 void sequencer::setBPM(std::vector<std::string> args){
     bpm = std::stoi(args[0]);
@@ -217,7 +220,14 @@ void sequencer::playSection(std::vector<std::string> args){
 }
 
 void sequencer::createSequencer(std::vector<std::string> args){
-    m->branch(s->sections[args[0]]);
+    if (isInt(args[0])){
+        m->branch(std::stoi(args[0]));
+        return;
+    }
+    else if (s->isValidSection(args[0])){
+        m->branch(s->sections[args[0]]);
+        return;
+    }
 }
 
 void sequencer::changeIncrement(std::vector<std::string> args){
