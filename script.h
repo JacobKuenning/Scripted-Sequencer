@@ -14,6 +14,7 @@ public:
     void printLines();
     void findSections();
     bool isValidSection(std::string s);
+    int strToLineNumber(std::string s);
     void findAndReplace(std::string f, std::string r);
     std::string getLine(int n);
 };

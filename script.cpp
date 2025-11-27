@@ -1,4 +1,5 @@
 #include "script.h"
+#include "lineutils.h"
 #include <string>
 #include <fstream>
 #include <iostream>
@@ -79,6 +80,25 @@ void script::findAndReplace(std::string f, std::string r){
         }
     }
 }
+
+int script::strToLineNumber(std::string s){
+    if (isInt(s)){
+        return std::stoi(s) - 1;
+    }
+
+    if (isValidSection(s)){
+        return sections[s] - 1; //-1 so that the section name is visible
+    }
+
+    char suffix = s[0];
+    if (suffix == 'r'){
+        std::string sub = s.substr(1,s.length()-1);
+        if (isInt(sub)){
+            return std::stoi(sub) - 1;
+        }
+    }
+}
+
 
 bool script::isValidSection(std::string s){
     if (sections.find(s) != sections.end())

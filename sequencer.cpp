@@ -201,8 +201,7 @@ void sequencer::skipLines(std::vector<std::string> args){
 }
 
 void sequencer::goToLine(std::vector<std::string> args){
-    int l = std::stoi(args[0]);
-    pCounter = l - 1;
+    pCounter = s->strToLineNumber(args[0]);
 }
 
 void sequencer::finish(std::vector<std::string> args){
@@ -220,14 +219,7 @@ void sequencer::playSection(std::vector<std::string> args){
 }
 
 void sequencer::createSequencer(std::vector<std::string> args){
-    if (isInt(args[0])){
-        m->branch(std::stoi(args[0]));
-        return;
-    }
-    else if (s->isValidSection(args[0])){
-        m->branch(s->sections[args[0]]);
-        return;
-    }
+    m->branch(s->strToLineNumber(args[0]) +1);
 }
 
 void sequencer::changeIncrement(std::vector<std::string> args){
