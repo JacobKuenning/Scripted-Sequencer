@@ -25,6 +25,7 @@ class sequencer{
     void run();
     ~sequencer();
     std::atomic<bool> running = true;
+    std::atomic<bool> paused = false;
     bool mainSequencer = false;
     void play(message m);
     void setRawMode(bool enable);
@@ -52,17 +53,17 @@ class sequencer{
     void parseMessage(std::string l);
     void parseFunction(std::string l);
 
-    void setVariable(std::string line);
     void setBPM(std::vector<std::string> args);
     void setSubdivisions(std::vector<std::string> args);
     void wait();
     void waitMilliseconds(std::vector<std::string> args);
 
-    void skipLines(std::vector<std::string> args);
+    void end(std::vector<std::string> args);
+    void pause(std::vector<std::string> args);
+
     void playSection(std::vector<std::string> args);
     void createSequencer(std::vector<std::string> args);
     void goToLine(std::vector<std::string> args);
-    void finish(std::vector<std::string> args);
 
     void changeIncrement(std::vector<std::string> args);
     void reverse(std::vector<std::string> args);

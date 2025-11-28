@@ -55,6 +55,9 @@ public:
     void input();
     void branch(std::string n, int i);
     void stopSequencer(std::vector<std::string> args);
+    void pauseSequencer(std::vector<std::string> args);
+    void resumeSequencer(std::vector<std::string> args);
+    std::vector<sequencer*> findSeqsWithName(std::string n);
     void setRawMode(bool enable);
     void killAllMidi();
     void printLine(int pCounter, std::string l, lineType ltype, int seqID, std::string seqName);

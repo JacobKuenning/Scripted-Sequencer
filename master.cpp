@@ -70,6 +70,7 @@ void master::input(){
             vectorMx.lock();
             for (sequencer* n : seqs){
                 n->running = false;
+                n->paused = false;
             }
             done = true;
             vectorMx.unlock();
@@ -103,6 +104,36 @@ void master::stopSequencer(std::vector<std::string> args){
 
     vectorMx.unlock();
 }
+
+void master::pauseSequencer(std::vector<std::string> args){
+    std::vector<sequencer*> s = findSeqsWithName(args[0]);
+    vectorMx.lock();
+    for (sequencer* seq : s){
+        seq->paused = true;
+    }
+    vectorMx.unlock();
+}
+
+void master::resumeSequencer(std::vector<std::string> args){
+    std::vector<sequencer*> s = findSeqsWithName(args[0]);
+    vectorMx.lock();
+    for (sequencer* seq : s){
+        seq->paused = false;
+    }
+    vectorMx.unlock();
+}
+
+std::vector<sequencer*> master::findSeqsWithName(std::string n){
+    std::vector<sequencer*> s;
+    vectorMx.lock();
+    for (sequencer* seq : seqs){
+        if (n == seq->name)
+            s.push_back(seq);
+    }
+    vectorMx.unlock();
+    return s;
+}
+
 
 void master::readConfig(){
     std::ifstream cFile("config.txt");

@@ -43,6 +43,9 @@ void sequencer::run(){
         } else {
             pCounter += increment;
         }
+        while (paused){
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
     }
     running = false;
 }
@@ -160,14 +163,16 @@ void sequencer::parseFunction(std::string l){
         setBPM(args);
     } else if (funcName == "set_subd"){
         setSubdivisions(args);
-    } else if (funcName == "skip"){
-        skipLines(args);
     } else if (funcName == "play"){
         playSection(args);
     } else if (funcName == "new_seq"){
         createSequencer(args);
     } else if (funcName == "end_seq"){
-        m->stopSequencer(args);
+        end(args);
+    } else if (funcName == "pause_seq"){
+        pause(args);
+    } else if (funcName == "resume_seq"){
+        m->resumeSequencer(args);
     } else if (funcName == "wait_ms"){
         waitMilliseconds(args);
     } else if (funcName == "set_inc"){
@@ -176,14 +181,14 @@ void sequencer::parseFunction(std::string l){
         reverse(args);
     } else if (funcName == "go_to"){
         goToLine(args);
-    } else if (funcName == "finish"){
-        finish(args);
     } else if (funcName == "v_find_n_rep"){
         m->varFindAndReplace(args);
     } else if (funcName == "v_set_inc"){
         m->varSetIncrement(args);
     } else if (funcName == "v_set_counter"){
         m->varSetCounter(args);
+    } else if (funcName == "none"){
+        
     }
 }
 
@@ -197,17 +202,8 @@ void sequencer::setSubdivisions(std::vector<std::string> args){
     clock = 60000 / (bpm * subdivisons);
 }
 
-void sequencer::skipLines(std::vector<std::string> args){
-    int by = std::stoi(args[0]) - 1;
-    pCounter += by;
-}
-
 void sequencer::goToLine(std::vector<std::string> args){
     pCounter = s->strToLineNumber(args[0]);
-}
-
-void sequencer::finish(std::vector<std::string> args){
-    pCounter = s->sLength;
 }
 
 void sequencer::waitMilliseconds(std::vector<std::string> args){
@@ -227,6 +223,27 @@ void sequencer::createSequencer(std::vector<std::string> args){
     else if (argc == 2)
         m->branch(args[0], s->strToLineNumber(args[1]) +1);
 }
+
+void sequencer::end(std::vector<std::string> args){
+    int argc = args.size();
+    if (argc == 0){
+        running = false;
+        return;
+    }
+    else 
+        m->stopSequencer(args);
+}
+
+void sequencer::pause(std::vector<std::string> args){
+    int argc = args.size();
+    if (argc == 0){
+        paused = true;
+        return;
+    }
+    else    
+        m->stopSequencer(args);
+}
+
 
 void sequencer::changeIncrement(std::vector<std::string> args){
     int argSize = args.size();
