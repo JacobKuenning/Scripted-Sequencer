@@ -1,4 +1,4 @@
-TARGET := prog
+TARGET := seqscript
 SRC := $(wildcard *.cpp) # all cpp files
 OBJDIR := obj
 OBJ := $(SRC:%.cpp=$(OBJDIR)/%.o) # obj is all .o files, their names will be the source files but replace .cpp with .o
