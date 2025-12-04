@@ -161,7 +161,7 @@ void sequencer::parseFunction(std::string l){
     std::vector<std::string> args = splitIntoArguments(argText);
     if (funcName == "set_bpm"){
         setBPM(args);
-    } else if (funcName == "set_subd"){
+    } else if (funcName == "set_steps_per_beat"){
         setSubdivisions(args);
     } else if (funcName == "play"){
         playSection(args);
@@ -187,6 +187,14 @@ void sequencer::parseFunction(std::string l){
         m->varSetIncrement(args);
     } else if (funcName == "v_set_counter"){
         m->varSetCounter(args);
+    } else if (funcName == "v_add_element"){
+        m->varAddElement(args);
+    } else if (funcName == "v_insert_element"){
+        m->varInsertElement(args);
+    } else if (funcName == "v_remove_element"){
+        m->varRemoveElement(args);
+    } else if (funcName == "v_remove_elements_by_value"){
+        m->varRemoveElementsByValue(args);
     } else if (funcName == "start_cc"){
         startCC(args);
     } else if (funcName == "none"){

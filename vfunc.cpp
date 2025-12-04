@@ -76,3 +76,50 @@ void master::varSetCounter(std::vector<std::string> args){
     v->vCounter = newCounter;
     variableMx.unlock(); 
 }
+
+void master::varAddElement(std::vector<std::string> args){
+    variableMx.lock();
+    variable* v = varByName(args[0]);
+    v->values.push_back(args[1]);
+    variableMx.unlock();
+}
+
+void master::varInsertElement(std::vector<std::string> args){
+    variableMx.lock();
+    variable* v = varByName(args[0]);
+    int index = std::stoi(args[2]);
+    if (index < 0) index = 0;
+    if (index > v->values.size()) index = v->values.size();
+    v->values.insert(v->values.begin() + index, args[1]);
+    variableMx.unlock();
+}
+
+void master::varRemoveElement(std::vector<std::string> args){
+    variableMx.lock();
+    variable* v = varByName(args[0]);
+    int index = std::stoi(args[1]);
+    if (index < 0 || index > v->values.size() - 1){
+        variableMx.unlock(); 
+        return;
+    } 
+
+    if (index < v->vCounter) v->vCounter--;
+
+    v->values.erase(v->values.begin() + index);
+    variableMx.unlock();
+}
+
+void master::varRemoveElementsByValue(std::vector<std::string> args){
+    variableMx.lock();
+    variable* v = varByName(args[0]);
+
+    std::string find = args[1];
+
+    for (int i = 0; i < v->values.size(); i++){
+        if (v->values[i] == find){
+            if (i < v->vCounter) v->vCounter--;
+            v->values.erase(v->values.begin() + i);
+        }
+    }
+    variableMx.unlock();
+}

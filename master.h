@@ -75,5 +75,9 @@ public:
     void varFindAndReplace(std::vector<std::string> args);
     void varSetIncrement(std::vector<std::string> args);
     void varSetCounter(std::vector<std::string> args);
+    void varAddElement(std::vector<std::string> args);
+    void varInsertElement(std::vector<std::string> args);
+    void varRemoveElement(std::vector<std::string> args);
+    void varRemoveElementsByValue(std::vector<std::string> args);
     
 };
