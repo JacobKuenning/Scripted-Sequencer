@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "color.h"
 #include "variable.h"
+#include "cclerper.h"
 #include <vector>
 #include <string>
 #include <thread>
@@ -22,6 +23,10 @@ class master{
 public:
     std::vector<std::thread> threads;
     std::vector<sequencer*> seqs;
+
+    std::vector<std::thread> ccThreads;
+    std::vector<cclerper*> cclerpers;
+
     script* scr;
     RtMidiOut* midiout;
     std::vector<variable*> variables;
@@ -61,6 +66,8 @@ public:
     void setRawMode(bool enable);
     void killAllMidi();
     void printLine(int pCounter, std::string l, lineType ltype, int seqID, std::string seqName);
+
+    void createCCLerper(int ch, int cc, int start, int end, float t);
 
     // in vfunc
     void setVariable(std::string l);

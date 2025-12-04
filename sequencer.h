@@ -68,6 +68,8 @@ class sequencer{
     void changeIncrement(std::vector<std::string> args);
     void reverse(std::vector<std::string> args);
 
+    void startCC(std::vector<std::string> args);
+
     std::string replaceVariables(std::string line);
 
     void error(std::string message, int l);

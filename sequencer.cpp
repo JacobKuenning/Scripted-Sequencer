@@ -187,6 +187,8 @@ void sequencer::parseFunction(std::string l){
         m->varSetIncrement(args);
     } else if (funcName == "v_set_counter"){
         m->varSetCounter(args);
+    } else if (funcName == "start_cc"){
+        startCC(args);
     } else if (funcName == "none"){
         
     }
@@ -284,6 +286,15 @@ std::string sequencer::replaceVariables(std::string line){
     }
     variableMx.unlock();
     return copy;
+}
+
+void sequencer::startCC(std::vector<std::string> args){
+    int ch = std::stoi(args[0]);
+    int cc = std::stoi(args[1]);
+    int s = std::stoi(args[2]);
+    int e = std::stoi(args[3]);
+    float t = std::stof(args[4]);
+    m->createCCLerper(ch,cc,s,e,t);
 }
 
 void sequencer::error(std::string message, int l){

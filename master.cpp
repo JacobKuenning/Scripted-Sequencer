@@ -5,6 +5,7 @@
 #include "message.h"
 #include "lineutils.h"
 #include "conv.h"
+
 #include "rtmidi/RtMidi.h"
 #include <thread>
 #include <string>
@@ -34,7 +35,7 @@ master::master(script* s){
     threads.push_back(std::move(seqThread));
 
     // main thread periodically loops through, joins finished threads and frees memory
-    while(!threads.empty()){
+    while(!threads.empty() || !ccThreads.empty()){
         vectorMx.lock();
         for (int i= 0; i < seqs.size(); i++){
             if (seqs[i]->running == false){
@@ -43,6 +44,16 @@ master::master(script* s){
                     delete seqs[i];
                     seqs.erase(seqs.begin()+i);
                     threads.erase(threads.begin() + i);
+                }
+            }
+        }
+        for (int i = 0; i < cclerpers.size(); i++){
+            if (cclerpers[i]->running == false){
+                if (ccThreads[i].joinable()){
+                    ccThreads[i].join();
+                    delete cclerpers[i];
+                    cclerpers.erase(cclerpers.begin() + i);
+                    ccThreads.erase(ccThreads.begin() + i);
                 }
             }
         }
@@ -72,6 +83,8 @@ void master::input(){
                 n->running = false;
                 n->paused = false;
             }
+            for (cclerper* ccL : cclerpers)
+                ccL->running = false;
             done = true;
             vectorMx.unlock();
         }
@@ -90,6 +103,30 @@ void master::branch(std::string n, int i){
     vectorMx.unlock();
     return;
 }
+
+void master::createCCLerper(int ch, int cc, int start, int end, float t){
+    // check for existing cclerper with ch and cc that was passed in
+    vectorMx.lock();
+    for (int i = 0; i < cclerpers.size(); i++){
+        // if it exists, stop it
+        if (cclerpers[i]->channel == ch && cclerpers[i]->controlChange == cc){
+            cclerpers[i]->running = false;
+            ccThreads[i].join();
+            delete cclerpers[i];
+            cclerpers.erase(cclerpers.begin() + i);
+            ccThreads.erase(ccThreads.begin() + i);
+        }
+    }
+
+    // start new cclerper
+    cclerper* ccL = new cclerper(ch,cc,start,end,t,midiout);
+    cclerpers.push_back(ccL);
+    std::thread ccThread;
+    ccThread = std::thread(&cclerper::interpolate, ccL);
+    ccThreads.push_back(std::move(ccThread));
+    vectorMx.unlock();
+}
+
 
 void master::stopSequencer(std::vector<std::string> args){
     vectorMx.lock();
