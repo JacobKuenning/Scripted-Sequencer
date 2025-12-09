@@ -94,10 +94,10 @@ int script::strToLineNumber(std::string s, int linenum){
     if (suffix == 'r'){ // relative position
         std::string sub = s.substr(1,s.length()-1);
         if (isInt(sub)){
-            std::cout << "is int works" << std::endl;
             return std::stoi(sub) + linenum - 1;
         }
     }
+    return linenum;
 }
 
 
