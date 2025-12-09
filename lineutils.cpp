@@ -126,6 +126,8 @@ std::string findAndReplace(std::string str, std::string f, std::string r, std::s
 }
 
 bool isInt(std::string str){
+    if (str[0] == '-') str = str.substr(1, str.size());
+
     return std::all_of(str.begin(), str.end(), ::isdigit);
 }
 

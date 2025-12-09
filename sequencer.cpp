@@ -213,7 +213,8 @@ void sequencer::setSubdivisions(std::vector<std::string> args){
 }
 
 void sequencer::goToLine(std::vector<std::string> args){
-    pCounter = s->strToLineNumber(args[0]);
+    int linen = s->strToLineNumber(args[0], pCounter);
+    pCounter = linen;
 }
 
 void sequencer::waitMilliseconds(std::vector<std::string> args){
@@ -229,9 +230,9 @@ void sequencer::playSection(std::vector<std::string> args){
 void sequencer::createSequencer(std::vector<std::string> args){
     int argc = args.size();
     if (argc == 1)
-        m->branch("", s->strToLineNumber(args[0]) +1);
+        m->branch("", s->strToLineNumber(args[0], pCounter) +1);
     else if (argc == 2)
-        m->branch(args[0], s->strToLineNumber(args[1]) +1);
+        m->branch(args[0], s->strToLineNumber(args[1], pCounter) +1);
 }
 
 void sequencer::end(std::vector<std::string> args){
