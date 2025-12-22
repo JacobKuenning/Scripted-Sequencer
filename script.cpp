@@ -1,16 +1,27 @@
 #include "script.h"
 #include "lineutils.h"
+#include "errors.h"
 #include <string>
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <filesystem>
 
 script::script(std::string fileName){
     std::ifstream scriptFile(fileName);
     std::string str;
+
+    if (!std::filesystem::exists(fileName))
+        error("File \"%s\" does not exists.", fileName.c_str());
+
     while (std::getline(scriptFile, str)){
         lines.push_back(str);
     }
+
+    if (lines.size() == 0){
+        error("File \"%s\" has no lines.", fileName.c_str());
+    }
+
     cleanScript();
     findSections();
 

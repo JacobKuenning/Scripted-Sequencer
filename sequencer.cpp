@@ -6,6 +6,8 @@
 #include "conv.h"
 #include "globals.h"
 #include "lineutils.h"
+#include "validation.h"
+#include "errors.h"
 #include "rtmidi/RtMidi.h"
 
 #include <chrono>
@@ -141,6 +143,10 @@ void sequencer::parseMessage(std::string l){
         if (args[0].find("ch") == std::string::npos && useDefChannel){ // if no channel specified in first arg
             std::string chStr = "ch" + std::to_string(defaultChannel);
             args.insert(args.begin(),chStr); // insert the default channel
+        }
+        if (!validMessageArgs(args)){ // don't create message if arguments are invalid
+            warning(" ^^^ Invalid arguments.");
+            return;
         }
         message m(args);
         messages.push_back(m);

@@ -37,7 +37,7 @@ master::master(script* s){
     // main thread periodically loops through, joins finished threads and frees memory
     while(!threads.empty() || !ccThreads.empty()){
         vectorMx.lock();
-        for (int i= 0; i < seqs.size(); i++){
+        for (int i= seqs.size() -1; i >= 0; i--){
             if (seqs[i]->running == false){
                 if (threads[i].joinable()){
                     threads[i].join();
