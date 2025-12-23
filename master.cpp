@@ -5,6 +5,7 @@
 #include "message.h"
 #include "lineutils.h"
 #include "conv.h"
+#include "errors.h"
 
 #include "rtmidi/RtMidi.h"
 #include <thread>

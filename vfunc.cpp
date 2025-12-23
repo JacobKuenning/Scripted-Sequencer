@@ -1,5 +1,6 @@
 #include "master.h"
 #include "lineutils.h"
+#include "errors.h"
 
 void master::setVariable(std::string l){
     std::string line = l;
@@ -41,12 +42,19 @@ variable* master::varByName(std::string n){
 }
 
 void master::varFindAndReplace(std::vector<std::string> args){
+    int argc = args.size();
+    if (argcError("v_find_n_rep", argc, 3, 4)) return;
+
+    std::string exc;
     std::string f = args[1];
     std::string r = args[2];
-    std::string exc = args[3];
+    if (argc == 4)
+        exc = args[3]; 
 
     variableMx.lock();
     variable* v = varByName(args[0]);
+    if (varError(v, args[0])) return;
+
     for (int i = 0; i < v->values.size(); i++){
         std::string oldValue = v->values[i];
         std::string newValue = findAndReplace(oldValue,f,r,exc);
@@ -56,18 +64,42 @@ void master::varFindAndReplace(std::vector<std::string> args){
 }
 
 void master::varSetIncrement(std::vector<std::string> args){
+    int argc = args.size();
+    if (argcError("v_set_inc", argc, 2)) return;
+
     variableMx.lock();
     std::string var = args[0];
+
+    if (!isInt(args[1])){
+        warning("Invalid argument.");
+        variableMx.unlock();
+        return;
+    }
+
     int newInc = std::stoi(args[1]);
 
     variable* v = varByName(args[0]);
+    if (varError(v, args[0])) return;
+
     v->vIncrement = newInc;
     variableMx.unlock();
 }
 
 void master::varSetCounter(std::vector<std::string> args){
+    int argc = args.size();
+    if (argcError("v_set_counter", argc, 2)) return;
+
     variableMx.lock();
+
+    if (!isInt(args[1])){
+        warning("Invalid argument.");
+        variableMx.unlock();
+        return;
+    }
+
     variable* v = varByName(args[0]);
+    if (varError(v, args[0])) return;
+
     int newCounter = std::stoi(args[1]);
     int vSize = v->values.size() -1;
     // if the number passed is outside of the bounds
@@ -78,15 +110,25 @@ void master::varSetCounter(std::vector<std::string> args){
 }
 
 void master::varAddElement(std::vector<std::string> args){
+    int argc = args.size();
+    if (argcError("v_add_element", argc, 2)) return;
+
     variableMx.lock();
     variable* v = varByName(args[0]);
+    if (varError(v, args[0])) return;
+
     v->values.push_back(args[1]);
     variableMx.unlock();
 }
 
 void master::varInsertElement(std::vector<std::string> args){
+    int argc = args.size();
+    if (argcError("v_insert_element", argc, 3)) return;
+
     variableMx.lock();
     variable* v = varByName(args[0]);
+    if (varError(v, args[0])) return;
+
     int index = std::stoi(args[2]);
     if (index < 0) index = 0;
     if (index > v->values.size()) index = v->values.size();
@@ -95,8 +137,13 @@ void master::varInsertElement(std::vector<std::string> args){
 }
 
 void master::varRemoveElement(std::vector<std::string> args){
+    int argc = args.size();
+    if (argcError("v_remove_element", argc, 2)) return;
+
     variableMx.lock();
     variable* v = varByName(args[0]);
+    if (varError(v, args[0])) return;
+
     int index = std::stoi(args[1]);
     if (index < 0 || index > v->values.size() - 1){
         variableMx.unlock(); 
@@ -110,8 +157,12 @@ void master::varRemoveElement(std::vector<std::string> args){
 }
 
 void master::varRemoveElementsByValue(std::vector<std::string> args){
+    int argc = args.size();
+    if (argcError("v_remove_element", argc, 2)) return;
+
     variableMx.lock();
     variable* v = varByName(args[0]);
+    if (varError(v, args[0])) return;
 
     std::string find = args[1];
 

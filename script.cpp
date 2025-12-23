@@ -108,6 +108,8 @@ int script::strToLineNumber(std::string s, int linenum){
             return std::stoi(sub) + linenum - 1;
         }
     }
+
+    warning("Invalid section or line number.");
     return linenum;
 }
 

@@ -210,10 +210,7 @@ void sequencer::parseFunction(std::string l){
 
 void sequencer::setBPM(std::vector<std::string> args){
     int argc = args.size();
-    if (argc == 0 || argc > 1){
-        warning("set_bpm takes 1 argument.");
-        return;
-    }
+    if (argcError("set_bpm", argc, 1)) return;
     
     if (!isInt(args[0])){
         warning("Invalid argument");
@@ -226,10 +223,7 @@ void sequencer::setBPM(std::vector<std::string> args){
 
 void sequencer::setSubdivisions(std::vector<std::string> args){
     int argc = args.size();
-    if (argc == 0 || argc > 1){
-        warning("set_subd takes 1 argument.");
-        return;
-    }
+    if (argcError("set_subd", argc, 1)) return;
     
     if (!isInt(args[0])){
         warning("Invalid argument");
@@ -242,15 +236,7 @@ void sequencer::setSubdivisions(std::vector<std::string> args){
 
 void sequencer::goToLine(std::vector<std::string> args){
     int argc = args.size();
-    if (argc == 0 || argc > 1){
-        warning("go_to takes 1 argument.");
-        return;
-    }
-    
-    if (!isInt(args[0])){
-        warning("Invalid argument");
-        return;
-    }
+    if (argcError("go_to", argc, 1)) return;
 
     int linen = s->strToLineNumber(args[0], pCounter);
     pCounter = linen;
@@ -258,10 +244,7 @@ void sequencer::goToLine(std::vector<std::string> args){
 
 void sequencer::waitMilliseconds(std::vector<std::string> args){
     int argc = args.size();
-    if (argc == 0 || argc > 1){
-        warning("wait_ms takes 1 argument.");
-        return;
-    }
+    if (argcError("wait_ms", argc, 1)) return;
     
     if (!isInt(args[0])){
         warning("Invalid argument");
@@ -274,10 +257,7 @@ void sequencer::waitMilliseconds(std::vector<std::string> args){
 
 void sequencer::playSection(std::vector<std::string> args){
     int argc = args.size();
-    if (argc == 0 || argc > 1){
-        warning("play takes 1 argument.");
-        return;
-    }
+    if (argcError("play", argc, 1)) return;
     
     if (!s->isValidSection(args[0])){
         warning("Invalid argument.");
@@ -290,10 +270,7 @@ void sequencer::playSection(std::vector<std::string> args){
 
 void sequencer::createSequencer(std::vector<std::string> args){
     int argc = args.size();
-    if (argc == 0 || argc > 3){
-        warning("create takes 1 or 2 arguments.");
-        return;
-    }
+    if (argcError("new_seq", argc, 1, 2));
 
     if (argc == 1){
         if (!isInt(args[0]) && !s->isValidSection(args[0])){
@@ -313,50 +290,29 @@ void sequencer::createSequencer(std::vector<std::string> args){
 
 void sequencer::end(std::vector<std::string> args){
     int argc = args.size();
-    if (argc > 1){
-        warning("end takes 0 or 1 argument.");
-        return;
-    }
+    if (argcError("end_seq", argc, 0, 1));
 
     if (argc == 0){
         running = false;
         return;
-    }
-    else{
-        if (!m->validSequencer(args[0])){
-            warning("Invalid argument.");
-            return;
-        }
     } 
         m->stopSequencer(args);
 }
 
 void sequencer::pause(std::vector<std::string> args){
     int argc = args.size();
-    if (argc > 1){
-        warning("pause takes 0 or 1 argument.");
-        return;
-    }
+    if (argcError("pause_seq", argc, 0, 1)) return;
 
     if (argc == 0){
         paused = true;
         return;
     }
-    else{
-        if (!m->validSequencer(args[0])){
-            warning("Invalid argument.");
-            return;
-        }
-    }  
+    m->pauseSequencer(args);
 }
 
 void sequencer::changeIncrement(std::vector<std::string> args){
     int argc = args.size();
-
-    if (argc != 1){
-        warning("set_inc takes 1 argument.");
-        return;
-    }
+    if (argcError("set_inc", argc, 1)) return;
     
     if (!isInt(args[0])){
         warning("Invalid argument.");
@@ -369,11 +325,7 @@ void sequencer::changeIncrement(std::vector<std::string> args){
 
 void sequencer::reverse(std::vector<std::string> args){
     int argc = args.size();
-
-    if (argc != 1){
-        warning("reverse takes 1 argument.");
-        return;
-    }
+    if (argcError("reverse", argc, 1)) return;
 
     if (!isInt(args[0])){
         warning("Invalid argument.");
@@ -413,10 +365,7 @@ std::string sequencer::replaceVariables(std::string line){
 
 void sequencer::startCC(std::vector<std::string> args){
     int argc = args.size();
-    if (argc != 5){
-        warning("start_cc takes 5 arguments");
-        return;
-    }
+    if (argcError("start_cc", argc, 5)) return;
 
     for (std::string arg : args){
         if (!isInt(arg)){

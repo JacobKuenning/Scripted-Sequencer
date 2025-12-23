@@ -102,11 +102,13 @@ std::string lowercase(std::string str){
 std::string findAndReplace(std::string str, std::string f, std::string r, std::string exc){
     // replace all of the exc with a newline, placeholder
     size_t pos = 0;
-    while ((pos = str.find(exc, pos)) != std::string::npos){
-        str.erase(pos,exc.length());
-        str.insert(pos,"\n");
-        pos += 1;
-    }
+
+    if (!exc.empty())
+        while ((pos = str.find(exc, pos)) != std::string::npos){
+            str.erase(pos,exc.length());
+            str.insert(pos,"\n");
+            pos += 1;
+        }
 
     pos = 0;
     while ((pos = str.find(f,pos)) != std::string::npos){
