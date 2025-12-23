@@ -66,7 +66,7 @@ public:
     void setRawMode(bool enable);
     void killAllMidi();
     void printLine(int pCounter, std::string l, lineType ltype, int seqID, std::string seqName);
-
+    bool validSequencer(std::string n);
     void createCCLerper(int ch, int cc, int start, int end, float t);
 
     // in vfunc

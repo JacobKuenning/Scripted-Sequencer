@@ -142,6 +142,20 @@ void master::stopSequencer(std::vector<std::string> args){
     vectorMx.unlock();
 }
 
+bool master::validSequencer(std::string n){
+    vectorMx.lock();
+
+    for (sequencer* seq : seqs){
+        if (seq->name == n){
+            return true;
+        }
+    }
+    return false;
+    
+    vectorMx.unlock();
+}
+
+
 void master::pauseSequencer(std::vector<std::string> args){
     std::vector<sequencer*> s = findSeqsWithName(args[0]);
     vectorMx.lock();
